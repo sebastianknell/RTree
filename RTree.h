@@ -9,18 +9,21 @@
 using namespace std;
 
 using Point = struct {int x; int y;};
-using Region = struct {int x; int y; int w; int h;};
+using Rect = struct {int x; int y; int w; int h;};
 using Polygon = vector<Point>;
 
 struct Node {
     bool isLeaf;
-    vector<Region> regions;
+    vector<Rect> regions;
+    vector<Point> points;
     vector<Node*> childs;
 };
 
 class RTree {
     Node* root;
+    int order;
 public:
+    RTree(int order = 3);
     void insert(Point);
     void insert(Polygon);
     void remove(Point);
