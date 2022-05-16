@@ -4,18 +4,22 @@
 
 #include "RTree.h"
 
-static int getNewPerimeter(Rect region, Point point) {
-    // TODO comprobar
-    auto newWidth = min(abs(region.x - point.x), abs(region.x + region.w - point.x));
-    auto newHeight = min(abs(region.y - point.y), abs(region.y + region.h - point.y));
-    return newWidth*2 + newHeight*2;
+static int getPerimeterEnlargement(Rect region, Point point) {
+    int widthEnlargement = 0, heightEnlargement = 0;
+    if(point.x < region.x || point.x > (region.x + region.w)){
+        widthEnlargement = min(abs(region.x - point.x), abs(region.x + region.w - point.x));
+    }
+    if(point.y < region.y || point.y > (region.y + region.h)) {
+        heightEnlargement = min(abs(region.y - point.y), abs(region.y + region.h - point.y));
+    }
+    return widthEnlargement*2 + heightEnlargement*2;
 }
 
 static int getBestRegion(Node* node, Point point) {
-    auto best = getNewPerimeter(node->regions.front(), point);
+    auto best = getPerimeterEnlargement(node->regions.front(), point);
     auto bestIndex = 0;
     for (int i = 1; i < node->regions.size(); i++) {
-        auto newPerimeter = getNewPerimeter(node->regions[i], point);
+        auto newPerimeter = getPerimeterEnlargement(node->regions[i], point);
         if (newPerimeter < best) {
             best = newPerimeter;
             bestIndex = i;

@@ -6,6 +6,7 @@
 #define RTREE_RTREE_H
 
 #include <vector>
+#include <cstdlib>
 using namespace std;
 
 using Point = struct {int x; int y;};
