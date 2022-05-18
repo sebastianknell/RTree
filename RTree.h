@@ -6,11 +6,13 @@
 #define RTREE_RTREE_H
 
 #include <vector>
-#include <pair>
+//#include <pair>
 #include <cstdlib>
 using namespace std;
 
 using Point = struct {int x; int y;};
+// creo que combiene esta definicion
+//using Rect = struct {int x_low; int y_low; int x_high; int y_high;};
 using Rect = struct {int x; int y; int w; int h;};
 using Polygon = vector<Point>;
 

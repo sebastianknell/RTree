@@ -52,7 +52,11 @@ pair<int,int> pickSeeds(const vector<Rect> &regions) {
         // Menor lado superior
         if (regions[i].y < regions[y_high].y) y_high = i;
 
-        // TODO actualizar minimos y maximos entre todas las regiones
+        // Actualizar minimos y maximos entre todas las regiones
+        if (regions[i].x < x_min) x_min = regions[i].x;
+        if (regions[i].x + regions[i].w > x_max) x_max = regions[i].x + regions[i].w;
+        if (regions[i].y - regions[i].h < y_min) y_min = regions[i].y - regions[i].h;
+        if (regions[i].y > y_max) y_max = regions[i].y;
 
     }
     auto x_dif = regions[x_high].x - regions[x_low].x + regions[x_low].w;
