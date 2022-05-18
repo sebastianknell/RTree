@@ -6,6 +6,7 @@
 #define RTREE_RTREE_H
 
 #include <vector>
+#include <pair>
 #include <cstdlib>
 using namespace std;
 
