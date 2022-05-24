@@ -11,11 +11,11 @@ static int getPerimeterEnlargement(Rect region, Rect r) {
 
 static int getPerimeterEnlargement(Rect region, Point point) {
     int widthEnlargement = 0, heightEnlargement = 0;
-    if(point.x < region.x || point.x > (region.x + region.w)){
-        widthEnlargement = min(abs(region.x - point.x), abs(region.x + region.w - point.x));
+    if(point.x < region.x_low || point.x > region.x_high){
+        widthEnlargement = min(abs(region.x_low - point.x), abs(region.x_high - point.x));
     }
-    if(point.y < region.y || point.y > (region.y + region.h)) {
-        heightEnlargement = min(abs(region.y - point.y), abs(region.y + region.h - point.y));
+    if(point.y < region.y_low || point.y > region.y_high) {
+        heightEnlargement = min(abs(region.y_low - point.y), abs(region.y_high - point.y));
     }
     return widthEnlargement*2 + heightEnlargement*2;
 }
@@ -33,51 +33,107 @@ static int getBestRegion(Node* node, Point point) {
     return bestIndex;
 }
 
+static void addRegion(Node* node, Rect region) {
+    node->rect.x_low = min(node->rect.x_low, region.x_low);
+    node->rect.x_high = min(node->rect.x_high, region.x_high);
+    node->rect.y_low = min(node->rect.y_low, region.y_low);
+    node->rect.y_high = min(node->rect.y_high, region.y_high);
+    node->regions.push_back(region);
+}
+
 RTree::RTree(int order): order(order), root(nullptr) {}
 
 pair<int,int> pickSeeds(const vector<Rect> &regions) {
     // Escoger primeras 2 regiones
-    int x_min = regions.front().x, x_max = regions.front().x + regions.front().w;
-    int y_min = regions.front().y - regions.front().h, y_max = regions.front().y;
-    int x_low = 0, x_high = 0, y_low = 0, y_high = 0; // Representan regiones
+    int x_min = regions.front().x_low, x_max = regions.front().x_high;
+    int y_min = regions.front().y_low, y_max = regions.front().y_high;
+    int lowRegion_x = 0, highRegion_x = 0, lowRegion_y = 0, highRegion_y = 0;
     for (int i = 1; i < regions.size(); i++) {
         // En x
         // Mayor lado inferior
-        if (regions[i].x - regions[i].w > regions[x_low].x - regions[x_low].w) x_low = i;
+        if (regions[i].x_low > regions[lowRegion_x].x_low) lowRegion_x = i;
         // Menor lado superior
-        if (regions[i].x < regions[x_high].x) x_high = i;
+        if (regions[i].x_high < regions[highRegion_x].x_high) highRegion_x = i;
         // En y
         // Mayor lado inferior
-        if (regions[i].y - regions[i].h > regions[y_low].y - regions[y_low].h) y_low = i;
+        if (regions[i].y_low > regions[lowRegion_y].y_low) lowRegion_y = i;
         // Menor lado superior
-        if (regions[i].y < regions[y_high].y) y_high = i;
+        if (regions[i].y_high < regions[highRegion_y].y_high) highRegion_y = i;
 
         // Actualizar minimos y maximos entre todas las regiones
-        if (regions[i].x < x_min) x_min = regions[i].x;
-        if (regions[i].x + regions[i].w > x_max) x_max = regions[i].x + regions[i].w;
-        if (regions[i].y - regions[i].h < y_min) y_min = regions[i].y - regions[i].h;
-        if (regions[i].y > y_max) y_max = regions[i].y;
-
+        if (regions[i].x_low < x_min) x_min = regions[i].x_low;
+        if (regions[i].x_high > x_max) x_max = regions[i].x_high;
+        if (regions[i].y_low < y_min) y_min = regions[i].y_low;
+        if (regions[i].y_high > y_max) y_max = regions[i].y_high;
     }
-    auto x_dif = regions[x_high].x - regions[x_low].x + regions[x_low].w;
-    auto y_dif = regions[y_high].y - regions[y_low].y + regions[y_low].h;
+    auto x_dif = regions[highRegion_x].x_low - regions[lowRegion_x].x_high;
+    auto y_dif = regions[highRegion_y].y_low - regions[lowRegion_y].y_high;
     // Normalizar las distancias
     x_dif /= (x_max - x_min);
     y_dif /= (y_max - y_min);
     // Escoger la mayor
     if (x_dif >= y_dif) {
-        return {x_low, x_high};
+        return {lowRegion_x, highRegion_x};
     } else {
-        return {y_low, y_high};
+        return {lowRegion_y, highRegion_y};
     }
 }
 
-void splitNode(Node* node) {
+void RTree::splitNode(Node* node) {
     auto seeds = pickSeeds(node->regions);
-    vector<Rect> group1, group2;
-    group1.push_back(node->regions[seeds.first]);
-    group2.push_back(node->regions[seeds.second]);
+    auto group1 = new Node(), group2 = new Node();
+    addRegion(group1, node->regions[seeds.first]);
+    addRegion(group2, node->regions[seeds.second]);
+    node->regions.erase(node->regions.begin() + seeds.first);
+    node->regions.erase(node->regions.begin() + seeds.second);
 
+    // TODO refactor. Se vuelve a calcular cuanto crece el perimetro dentro del loop
+    sort(node->regions.begin(), node->regions.end(), [&group1, &group2](Rect a, Rect b) {
+        auto a_dif = abs(getPerimeterEnlargement(group1->rect, a) - getPerimeterEnlargement(group2->rect, a));
+        auto b_dif = abs(getPerimeterEnlargement(group1->rect, b) - getPerimeterEnlargement(group2->rect, b));
+        return a_dif < b_dif;
+    });
+
+    auto min = (int)order/2;
+    do {
+        if (group1->regions.size() + node->regions.size() == min) {
+            // Agregar todas las regiones restantes al grupo 1
+            for (auto &region : node->regions) {
+                addRegion(group1, region);
+            }
+            break;
+        }
+        else if (group2->regions.size() + node->regions.size() == min) {
+            // Agregar todas las regiones restantes al grupo 2
+            for (auto &region : node->regions) {
+                addRegion(group2, region);
+            }
+            break;
+        }
+        auto group1Enlargement = getPerimeterEnlargement(group1->rect, node->regions.back());
+        auto group2Enlargement = getPerimeterEnlargement(group2->rect, node->regions.back());
+        if (group1Enlargement < group2Enlargement) {
+            // Mover la region al grupo 1
+            addRegion(group1, node->regions.front());
+        }
+        else if (group1Enlargement > group2Enlargement) {
+            // Mover la region al grupo 2
+            addRegion(group2, node->regions.front());
+        }
+        else {
+            // Mover al que tiene menos regiones
+            if (group1->regions.size() < group2->regions.size()) {
+                addRegion(group1, node->regions.front());
+            }
+            else if (group1->regions.size() > group2->regions.size()) {
+                addRegion(group2, node->regions.front());
+            }
+            else {
+                addRegion(group1, node->regions.front());
+            }
+        }
+        node->regions.pop_back();
+    } while (!node->regions.empty());
 }
 
 void RTree::insert(Point point) {

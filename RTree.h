@@ -6,18 +6,20 @@
 #define RTREE_RTREE_H
 
 #include <vector>
-//#include <pair>
 #include <cstdlib>
+#include <algorithm>
+#include <utility>
 using namespace std;
 
 using Point = struct {int x; int y;};
 // creo que combiene esta definicion
-//using Rect = struct {int x_low; int y_low; int x_high; int y_high;};
-using Rect = struct {int x; int y; int w; int h;};
+using Rect = struct {int x_low; int y_low; int x_high; int y_high;};
+//using Rect = struct {int x; int y; int w; int h;};
 using Polygon = vector<Point>;
 
 struct Node {
     bool isLeaf;
+    Rect rect;
     vector<Rect> regions;
     vector<Point> points;
     vector<Node*> childs;
@@ -26,6 +28,7 @@ struct Node {
 class RTree {
     Node* root;
     int order;
+    void splitNode(Node*);
 public:
     RTree(int order = 3);
     void insert(Point);
