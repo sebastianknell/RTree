@@ -79,6 +79,17 @@ pair<int,int> pickSeeds(const vector<Rect> &regions) {
     }
 }
 
+static int pickNext(const vector<Rect> &regions, Rect group1, Rect group2) {
+    int i = 0;
+    int maxDif = -1;
+    do {
+        auto dif = abs(getPerimeterEnlargement(group1, regions[i]) - getPerimeterEnlargement(group2, regions[i]));
+        if (dif > maxDif) maxDif = i;
+        i++;
+    } while (i < regions.size());
+    return maxDif;
+}
+
 void RTree::splitNode(Node* node) {
     auto seeds = pickSeeds(node->regions);
     auto group1 = new Node(), group2 = new Node();
@@ -87,15 +98,9 @@ void RTree::splitNode(Node* node) {
     node->regions.erase(node->regions.begin() + seeds.first);
     node->regions.erase(node->regions.begin() + seeds.second);
 
-    // TODO refactor. Se vuelve a calcular cuanto crece el perimetro dentro del loop
-    sort(node->regions.begin(), node->regions.end(), [&group1, &group2](Rect a, Rect b) {
-        auto a_dif = abs(getPerimeterEnlargement(group1->rect, a) - getPerimeterEnlargement(group2->rect, a));
-        auto b_dif = abs(getPerimeterEnlargement(group1->rect, b) - getPerimeterEnlargement(group2->rect, b));
-        return a_dif < b_dif;
-    });
-
     auto min = (int)order/2;
     do {
+        auto next = pickNext(node->regions, group1->rect, group2->rect);
         if (group1->regions.size() + node->regions.size() == min) {
             // Agregar todas las regiones restantes al grupo 1
             for (auto &region : node->regions) {
@@ -114,25 +119,22 @@ void RTree::splitNode(Node* node) {
         auto group2Enlargement = getPerimeterEnlargement(group2->rect, node->regions.back());
         if (group1Enlargement < group2Enlargement) {
             // Mover la region al grupo 1
-            addRegion(group1, node->regions.front());
+            addRegion(group1, node->regions[next]);
         }
         else if (group1Enlargement > group2Enlargement) {
             // Mover la region al grupo 2
-            addRegion(group2, node->regions.front());
+            addRegion(group2, node->regions[next]);
         }
         else {
             // Mover al que tiene menos regiones
             if (group1->regions.size() < group2->regions.size()) {
-                addRegion(group1, node->regions.front());
-            }
-            else if (group1->regions.size() > group2->regions.size()) {
-                addRegion(group2, node->regions.front());
+                addRegion(group1, node->regions[next]);
             }
             else {
-                addRegion(group1, node->regions.front());
+                addRegion(group2, node->regions[next]);
             }
         }
-        node->regions.pop_back();
+        node->regions.erase(node->regions.begin() + next);
     } while (!node->regions.empty());
 }
 
