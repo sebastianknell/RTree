@@ -9,6 +9,8 @@
 #include <cstdlib>
 #include <algorithm>
 #include <utility>
+#include <cmath>
+
 using namespace std;
 
 using Point = struct {int x; int y;};
@@ -16,6 +18,9 @@ using Point = struct {int x; int y;};
 using Rect = struct {int x_low; int y_low; int x_high; int y_high;};
 //using Rect = struct {int x; int y; int w; int h;};
 using Polygon = vector<Point>;
+
+extern int radius;
+extern bool isInCircle(Point p, Point circleP, int radius);
 
 struct Node {
     bool isLeaf;

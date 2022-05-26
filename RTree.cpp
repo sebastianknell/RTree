@@ -4,9 +4,18 @@
 
 #include "RTree.h"
 
-// TODO generalizar para rectangulos
-static int getPerimeterEnlargement(Rect region, Rect r) {
+int radius = 4;
 
+bool isInCircle(Point p, Point circleP, int radius) {
+    return (pow(p.x - circleP.x, 2) + pow(p.y - circleP.y, 2)) <= pow(radius, 2);
+}
+
+static int getPerimeterEnlargement(Rect region, Rect r) {
+    auto x_low = min(region.x_low, r.x_low);
+    auto y_low = min(region.y_low, r.y_low);
+    auto x_high = max(region.x_high, r.x_high);
+    auto y_high = max(region.y_high, r.y_high);
+    return ((x_high - x_low) + (y_high - y_low)) - ((region.x_high - region.x_low) + (region.y_high - region.y_low));
 }
 
 static int getPerimeterEnlargement(Rect region, Point point) {
@@ -43,7 +52,7 @@ static void addRegion(Node* node, Rect region) {
 
 RTree::RTree(int order): order(order), root(nullptr) {}
 
-pair<int,int> pickSeeds(const vector<Rect> &regions) {
+static pair<int,int> pickSeeds(const vector<Rect> &regions) {
     // Escoger primeras 2 regiones
     int x_min = regions.front().x_low, x_max = regions.front().x_high;
     int y_min = regions.front().y_low, y_max = regions.front().y_high;
