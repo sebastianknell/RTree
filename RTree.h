@@ -17,29 +17,27 @@ using Point = struct {int x; int y;};
 // creo que combiene esta definicion
 using Rect = struct {int x_low; int y_low; int x_high; int y_high;};
 //using Rect = struct {int x; int y; int w; int h;};
-using Polygon = vector<Point>;
+using Data = vector<Point>;
 
 extern int radius;
 extern bool isInCircle(Point p, Point circleP, int radius);
 
 struct Node {
-    bool isLeaf;
     Rect rect;
-    vector<Rect> regions;
-    vector<Point> points;
+    vector<Rect> regions; // regiones o bounding boxes si es hoja
     vector<Node*> childs;
+    bool isLeaf;
+    vector<Data*> data; // valido si es hoja
 };
 
 class RTree {
     Node* root;
     int order;
-    void splitNode(Node*);
+    pair<Node*, Node*> splitNode(Node*);
 public:
     RTree(int order = 3);
-    void insert(Point);
-    void insert(Polygon);
+    void insert(const Data&);
     void remove(Point);
-    void remove(Polygon);
 };
 
 

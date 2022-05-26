@@ -29,11 +29,11 @@ static int getPerimeterEnlargement(Rect region, Point point) {
     return widthEnlargement*2 + heightEnlargement*2;
 }
 
-static int getBestRegion(Node* node, Point point) {
-    auto best = getPerimeterEnlargement(node->regions.front(), point);
+static int getBestRegion(Node* node, Rect r) {
+    auto best = getPerimeterEnlargement(node->regions.front(), r);
     auto bestIndex = 0;
     for (int i = 1; i < node->regions.size(); i++) {
-        auto newPerimeter = getPerimeterEnlargement(node->regions[i], point);
+        auto newPerimeter = getPerimeterEnlargement(node->regions[i], r);
         if (newPerimeter < best) {
             best = newPerimeter;
             bestIndex = i;
@@ -48,6 +48,13 @@ static void addRegion(Node* node, Rect region) {
     node->rect.y_low = min(node->rect.y_low, region.y_low);
     node->rect.y_high = min(node->rect.y_high, region.y_high);
     node->regions.push_back(region);
+}
+
+static Rect getBoundingBox(const Data &data) {
+    if (data.size() == 1) { // Es un punto
+        return {data.front().x, data.front().y, data.front().x, data.front().y};
+    }
+
 }
 
 RTree::RTree(int order): order(order), root(nullptr) {}
@@ -99,7 +106,7 @@ static int pickNext(const vector<Rect> &regions, Rect group1, Rect group2) {
     return maxDif;
 }
 
-void RTree::splitNode(Node* node) {
+pair<Node*, Node*> RTree::splitNode(Node* node) {
     auto seeds = pickSeeds(node->regions);
     auto group1 = new Node(), group2 = new Node();
     addRegion(group1, node->regions[seeds.first]);
@@ -145,24 +152,30 @@ void RTree::splitNode(Node* node) {
         }
         node->regions.erase(node->regions.begin() + next);
     } while (!node->regions.empty());
+    return {group1, group2};
 }
 
-void RTree::insert(Point point) {
+void RTree::insert(const Data &data) {
+    // Calcular bounding box
+    Rect bb = getBoundingBox(data);
     if (!root) {
         root = new Node();
-        root->points.push_back(point);
+        addRegion(root, bb);
+        root->data.push_back(new Data(data));
         return;
     }
     // Buscar region
     auto curr = root;
     while (!curr->isLeaf) {
-        auto regionIndex = getBestRegion(curr, point);
+        auto regionIndex = getBestRegion(curr, bb);
         curr = curr->childs[regionIndex];
     }
     // Insertar
-    curr->points.push_back(point);
-    // Si el nodo es invalido, hacer split
-    if (curr->points.size() > order) {
+    // Si el nodo tiene espacio, lo meto
+    if (curr->regions.size() <= order) {
 
+    }
+    else {
+        auto res = splitNode(curr);
     }
 }
