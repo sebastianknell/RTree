@@ -6,8 +6,8 @@
 
 int radius = 4;
 
-bool isInCircle(Point p, Point circleP, int radius) {
-    return (pow(p.x - circleP.x, 2) + pow(p.y - circleP.y, 2)) <= pow(radius, 2);
+bool isInCircle(Point p, Point circleP, int r) {
+    return (pow(p.x - circleP.x, 2) + pow(p.y - circleP.y, 2)) <= pow(r, 2);
 }
 
 static int getPerimeterEnlargement(Rect region, Rect r) {
@@ -16,17 +16,6 @@ static int getPerimeterEnlargement(Rect region, Rect r) {
     auto x_high = max(region.x_high, r.x_high);
     auto y_high = max(region.y_high, r.y_high);
     return ((x_high - x_low) + (y_high - y_low)) - ((region.x_high - region.x_low) + (region.y_high - region.y_low));
-}
-
-static int getPerimeterEnlargement(Rect region, Point point) {
-    int widthEnlargement = 0, heightEnlargement = 0;
-    if(point.x < region.x_low || point.x > region.x_high){
-        widthEnlargement = min(abs(region.x_low - point.x), abs(region.x_high - point.x));
-    }
-    if(point.y < region.y_low || point.y > region.y_high) {
-        heightEnlargement = min(abs(region.y_low - point.y), abs(region.y_high - point.y));
-    }
-    return widthEnlargement*2 + heightEnlargement*2;
 }
 
 static int getBestRegion(Node* node, Rect r) {
@@ -44,9 +33,9 @@ static int getBestRegion(Node* node, Rect r) {
 
 static void addRegion(Node* node, Rect region) {
     node->rect.x_low = min(node->rect.x_low, region.x_low);
-    node->rect.x_high = min(node->rect.x_high, region.x_high);
+    node->rect.x_high = max(node->rect.x_high, region.x_high);
     node->rect.y_low = min(node->rect.y_low, region.y_low);
-    node->rect.y_high = min(node->rect.y_high, region.y_high);
+    node->rect.y_high = max(node->rect.y_high, region.y_high);
     node->regions.push_back(region);
 }
 
@@ -116,7 +105,6 @@ pair<Node*, Node*> RTree::splitNode(Node* node) {
 
     auto min = (int)order/2;
     do {
-        auto next = pickNext(node->regions, group1->rect, group2->rect);
         if (group1->regions.size() + node->regions.size() == min) {
             // Agregar todas las regiones restantes al grupo 1
             for (auto &region : node->regions) {
@@ -131,8 +119,9 @@ pair<Node*, Node*> RTree::splitNode(Node* node) {
             }
             break;
         }
-        auto group1Enlargement = getPerimeterEnlargement(group1->rect, node->regions.back());
-        auto group2Enlargement = getPerimeterEnlargement(group2->rect, node->regions.back());
+        auto next = pickNext(node->regions, group1->rect, group2->rect);
+        auto group1Enlargement = getPerimeterEnlargement(group1->rect, node->regions[next]);
+        auto group2Enlargement = getPerimeterEnlargement(group2->rect, node->regions[next]);
         if (group1Enlargement < group2Enlargement) {
             // Mover la region al grupo 1
             addRegion(group1, node->regions[next]);
@@ -171,7 +160,7 @@ void RTree::insert(const Data &data) {
         curr = curr->childs[regionIndex];
     }
     // Insertar
-    // Si el nodo tiene espacio, lo meto
+    // Si el nodo tiene espacio, insertar
     if (curr->regions.size() <= order) {
 
     }

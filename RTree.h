@@ -6,6 +6,7 @@
 #define RTREE_RTREE_H
 
 #include <vector>
+#include <stack>
 #include <cstdlib>
 #include <algorithm>
 #include <utility>

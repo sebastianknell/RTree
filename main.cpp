@@ -12,25 +12,25 @@ vector<Point> currentDrawing;
 
 static void clickHandler(int event, int x, int y, int flags, void*) {
     if (event == cv::EVENT_LBUTTONDOWN) {
-        if (flags == (cv::EVENT_FLAG_ALTKEY + cv::EVENT_FLAG_LBUTTON)) {
-            cv::circle(img, {x, y}, radius, {0,0,0}, -1);
-        }
-        else {
-            if (!drawing) {
+        if (!drawing) {
+            if (flags == (cv::EVENT_FLAG_ALTKEY + cv::EVENT_FLAG_LBUTTON)) {
+                cv::circle(img, {x, y}, radius, {0,0,0}, -1);
+            }
+            else {
                 drawing = true;
                 currentDrawing.push_back({x, y});
             }
-            else {
-                auto last = currentDrawing.back();
-                cv::line(img, {last.x, last.y}, {x, y}, {0 , 0, 0}, 2);
-                if (isInCircle({x, y}, currentDrawing.front(), radius)) {
-                    for (auto &p : currentDrawing) cout << p.x << ", " << p.y << " | ";
-                    cout << endl;
-                    currentDrawing.clear();
-                    drawing = false;
-                }
-                else currentDrawing.push_back({x, y});
+        }
+        else {
+            auto last = currentDrawing.back();
+            cv::line(img, {last.x, last.y}, {x, y}, {0 , 0, 0}, 2);
+            if (isInCircle({x, y}, currentDrawing.front(), radius)) {
+                for (auto &p : currentDrawing) cout << p.x << ", " << p.y << " | ";
+                cout << endl;
+                currentDrawing.clear();
+                drawing = false;
             }
+            else currentDrawing.push_back({x, y});
         }
         cv::imshow(windowName, img);
     }
