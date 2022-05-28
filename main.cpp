@@ -1,5 +1,4 @@
 #include <iostream>
-#include <opencv2/opencv.hpp>
 #include "RTree.h"
 
 using namespace std;
@@ -18,19 +17,18 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
             }
             else {
                 drawing = true;
-                currentDrawing.push_back({x, y});
+                currentDrawing.emplace_back(x, y);
             }
         }
         else {
-            auto last = currentDrawing.back();
-            cv::line(img, {last.x, last.y}, {x, y}, {0 , 0, 0}, 2);
+            cv::line(img, currentDrawing.back(), {x, y}, {0 , 0, 0}, 2);
             if (isInCircle({x, y}, currentDrawing.front(), radius)) {
                 for (auto &p : currentDrawing) cout << p.x << ", " << p.y << " | ";
                 cout << endl;
                 currentDrawing.clear();
                 drawing = false;
             }
-            else currentDrawing.push_back({x, y});
+            else currentDrawing.emplace_back(x, y);
         }
         cv::imshow(windowName, img);
     }

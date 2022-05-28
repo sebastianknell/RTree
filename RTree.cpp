@@ -235,3 +235,29 @@ void RTree::insert(const Data &data) {
         root->childs.push_back(curr2);
     }
 }
+
+static void showNode(Node* node, cv::InputOutputArray &img) {
+    if (node == nullptr) return;
+    for (const auto &r : node->regions) {
+        cv::rectangle(img, {r.x_low, r.y_low}, {r.x_high, r.y_high}, {0,0,0}, 2);
+    }
+    if (node->isLeaf) {
+        for (const auto &d : node->data) {
+            if (d->size() == 1) {
+                cv::circle(img, d->front(), radius, {0,0,0}, -1);
+            }
+            else {
+                cv::polylines(img, *d, true, {0,0,0}, 2);
+            }
+        }
+    }
+    else {
+        for (const auto &c : node->childs) {
+            showNode(c, img);
+        }
+    }
+}
+
+void RTree::show(cv::InputOutputArray &img) {
+    showNode(root, img);
+}

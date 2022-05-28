@@ -11,12 +11,13 @@
 #include <algorithm>
 //#include <utility>
 #include <cmath>
+#include <opencv2/opencv.hpp>
 
 using namespace std;
 
-using Point = struct {int x; int y;};
+using Point = cv::Point;
 using Rect = struct {int x_low; int y_low; int x_high; int y_high;};
-using Data = vector<Point>;
+using Data = vector<cv::Point>;
 
 extern int radius;
 extern bool isInCircle(Point p, Point circleP, int radius);
@@ -40,6 +41,7 @@ public:
     RTree(int order = 3);
     void insert(const Data&);
     void remove(Point);
+    void show(cv::InputOutputArray&);
 };
 
 
