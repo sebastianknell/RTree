@@ -46,6 +46,19 @@ static Rect getBoundingBox(const Data &data) {
 
 }
 
+static Rect getBoundingRect(const vector<Rect> &regions) {
+    int x_min = regions.front().x_low, x_max = regions.front().x_high;
+    int y_min = regions.front().y_low, y_max = regions.front().y_high;
+    for (int i = 1; i < regions.size(); i++) {
+        if (regions[i].x_low < x_min) x_min = regions[i].x_low;
+        if (regions[i].x_high > x_max) x_max = regions[i].x_high;
+        if (regions[i].y_low < y_min) y_min = regions[i].y_low;
+        if (regions[i].y_high > y_max) y_max = regions[i].y_high;
+    }
+    return {x_min, y_min, x_max, y_max};
+}
+
+
 RTree::RTree(int order): order(order), root(nullptr) {}
 
 static pair<int,int> pickSeeds(const vector<Rect> &regions) {
@@ -95,27 +108,36 @@ static int pickNext(const vector<Rect> &regions, Rect group1, Rect group2) {
     return maxDif;
 }
 
-pair<Node*, Node*> RTree::splitNode(Node* node) {
+Node* RTree::splitNode(Node* node) const {
+    // TODO refactor y optimizar
     auto seeds = pickSeeds(node->regions);
     auto group1 = new Node(), group2 = new Node();
     addRegion(group1, node->regions[seeds.first]);
     addRegion(group2, node->regions[seeds.second]);
     node->regions.erase(node->regions.begin() + seeds.first);
     node->regions.erase(node->regions.begin() + seeds.second);
+    if (node->isLeaf) {
+        node->data.erase(node->data.begin() + seeds.first);
+        node->data.erase(node->data.begin() + seeds.second);
+    }
 
     auto min = (int)order/2;
     do {
         if (group1->regions.size() + node->regions.size() == min) {
             // Agregar todas las regiones restantes al grupo 1
-            for (auto &region : node->regions) {
-                addRegion(group1, region);
+            for (int i = 0; i < node->regions.size(); i++) {
+                addRegion(group1, node->regions[i]);
+                if (node->isLeaf) group1->data.push_back(node->data[i]);
+                else group1->childs.push_back(node->childs[i]);
             }
             break;
         }
         else if (group2->regions.size() + node->regions.size() == min) {
             // Agregar todas las regiones restantes al grupo 2
-            for (auto &region : node->regions) {
-                addRegion(group2, region);
+            for (int i = 0; i < node->regions.size(); i++) {
+                addRegion(group1, node->regions[i]);
+                if (node->isLeaf) group2->data.push_back(node->data[i]);
+                else group2->childs.push_back(node->childs[i]);
             }
             break;
         }
@@ -125,23 +147,36 @@ pair<Node*, Node*> RTree::splitNode(Node* node) {
         if (group1Enlargement < group2Enlargement) {
             // Mover la region al grupo 1
             addRegion(group1, node->regions[next]);
+            if (node->isLeaf) group2->data.push_back(node->data[next]);
+            else group2->childs.push_back(node->childs[next]);
         }
         else if (group1Enlargement > group2Enlargement) {
             // Mover la region al grupo 2
             addRegion(group2, node->regions[next]);
+            if (node->isLeaf) group2->data.push_back(node->data[next]);
+            else group2->childs.push_back(node->childs[next]);
         }
         else {
             // Mover al que tiene menos regiones
             if (group1->regions.size() < group2->regions.size()) {
                 addRegion(group1, node->regions[next]);
+                if (node->isLeaf) group2->data.push_back(node->data[next]);
+                else group2->childs.push_back(node->childs[next]);
             }
             else {
                 addRegion(group2, node->regions[next]);
+                if (node->isLeaf) group2->data.push_back(node->data[next]);
+                else group2->childs.push_back(node->childs[next]);
             }
         }
         node->regions.erase(node->regions.begin() + next);
+        if (node->isLeaf) node->data.erase(node->data.begin() + next);
+        else node->childs.erase(node->childs.begin() + next);;
     } while (!node->regions.empty());
-    return {group1, group2};
+    node->regions = group1->regions;
+    if (node->isLeaf) node->data = group1->data;
+    else node->childs = group1->childs;
+    return group2;
 }
 
 void RTree::insert(const Data &data) {
@@ -155,16 +190,48 @@ void RTree::insert(const Data &data) {
     }
     // Buscar region
     auto curr = root;
+    stack<pos> parents;
     while (!curr->isLeaf) {
         auto regionIndex = getBestRegion(curr, bb);
+        parents.push({curr, regionIndex});
         curr = curr->childs[regionIndex];
     }
     // Insertar
-    // Si el nodo tiene espacio, insertar
-    if (curr->regions.size() <= order) {
-
+    addRegion(curr, bb);
+    curr->data.push_back(new Data(data));
+    Node *curr2 = nullptr;
+    // Si el nodo es invalido, hacer split
+    if (curr->regions.size() > order) {
+        curr2 = splitNode(curr);
     }
-    else {
-        auto res = splitNode(curr);
+    // Ajustar el arbol
+    bool rootSplit = false;
+    do {
+        if (curr == root) break;
+        auto parent = parents.top().node;
+        auto indexInParent = parents.top().index;
+        parents.pop();
+        // Ajustar la region en el padre
+        parent->regions[indexInParent] = curr->rect;
+        parent->rect = getBoundingRect(parent->regions); // Todo cambiar por una funcion updateRegion
+        // Propagar split hacia arriba
+        if (curr2) {
+            addRegion(parent, curr2->rect);
+            parent->childs.push_back(curr2);
+            if (parent->regions.size() > order) {
+                curr2 = splitNode(parent);
+                if (parent == root) rootSplit = true;
+            }
+        }
+        curr = parent;
+    } while (!parents.empty());
+    // Cambiar al root si se hizo un split
+    if (rootSplit) {
+        assert(curr2 != nullptr);
+        root = new Node();
+        addRegion(root, curr->rect);
+        addRegion(root, curr2->rect);
+        root->childs.push_back(curr);
+        root->childs.push_back(curr2);
     }
 }

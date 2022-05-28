@@ -7,23 +7,22 @@
 
 #include <vector>
 #include <stack>
-#include <cstdlib>
+//#include <cstdlib>
 #include <algorithm>
-#include <utility>
+//#include <utility>
 #include <cmath>
 
 using namespace std;
 
 using Point = struct {int x; int y;};
-// creo que combiene esta definicion
 using Rect = struct {int x_low; int y_low; int x_high; int y_high;};
-//using Rect = struct {int x; int y; int w; int h;};
 using Data = vector<Point>;
 
 extern int radius;
 extern bool isInCircle(Point p, Point circleP, int radius);
 
 struct Node {
+    // TODO ver si combiene usar List
     Rect rect;
     vector<Rect> regions; // regiones o bounding boxes si es hoja
     vector<Node*> childs;
@@ -31,10 +30,12 @@ struct Node {
     vector<Data*> data; // valido si es hoja
 };
 
+using pos = struct {Node* node; int index;};
+
 class RTree {
     Node* root;
     int order;
-    pair<Node*, Node*> splitNode(Node*);
+    Node* splitNode(Node*) const;
 public:
     RTree(int order = 3);
     void insert(const Data&);
