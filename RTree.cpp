@@ -32,10 +32,13 @@ static int getBestRegion(Node* node, Rect r) {
 }
 
 static void addRegion(Node* node, Rect region) {
-    node->rect.x_low = min(node->rect.x_low, region.x_low);
-    node->rect.x_high = max(node->rect.x_high, region.x_high);
-    node->rect.y_low = min(node->rect.y_low, region.y_low);
-    node->rect.y_high = max(node->rect.y_high, region.y_high);
+    if (node->regions.empty()) node->rect = region;
+    else {
+        node->rect.x_low = min(node->rect.x_low, region.x_low);
+        node->rect.x_high = max(node->rect.x_high, region.x_high);
+        node->rect.y_low = min(node->rect.y_low, region.y_low);
+        node->rect.y_high = max(node->rect.y_high, region.y_high);
+    }
     node->regions.push_back(region);
 }
 
@@ -111,17 +114,26 @@ static int pickNext(const vector<Rect> &regions, Rect group1, Rect group2) {
 Node* RTree::splitNode(Node* node) const {
     // TODO refactor y optimizar
     auto seeds = pickSeeds(node->regions);
-    auto group1 = new Node(), group2 = new Node();
+    auto group1 = new Node(node->isLeaf), group2 = new Node(node->isLeaf);
     addRegion(group1, node->regions[seeds.first]);
     addRegion(group2, node->regions[seeds.second]);
     node->regions.erase(node->regions.begin() + seeds.first);
+    if (seeds.first < seeds.second) seeds.second -= 1; // los indices pueden cambiar luego de borrar
     node->regions.erase(node->regions.begin() + seeds.second);
     if (node->isLeaf) {
+        group1->data.push_back(node->data[seeds.first]);
+        group2->data.push_back(node->data[seeds.second]);
         node->data.erase(node->data.begin() + seeds.first);
         node->data.erase(node->data.begin() + seeds.second);
     }
+    else {
+        group1->childs.push_back(node->childs[seeds.first]);
+        group2->childs.push_back(node->childs[seeds.second]);
+        node->childs.erase(node->childs.begin() + seeds.first);
+        node->childs.erase(node->childs.begin() + seeds.second);
+    }
 
-    auto min = (int)order/2;
+    auto min = (int)order/2 + order%2;
     do {
         if (group1->regions.size() + node->regions.size() == min) {
             // Agregar todas las regiones restantes al grupo 1
@@ -135,7 +147,7 @@ Node* RTree::splitNode(Node* node) const {
         else if (group2->regions.size() + node->regions.size() == min) {
             // Agregar todas las regiones restantes al grupo 2
             for (int i = 0; i < node->regions.size(); i++) {
-                addRegion(group1, node->regions[i]);
+                addRegion(group2, node->regions[i]);
                 if (node->isLeaf) group2->data.push_back(node->data[i]);
                 else group2->childs.push_back(node->childs[i]);
             }
@@ -147,8 +159,8 @@ Node* RTree::splitNode(Node* node) const {
         if (group1Enlargement < group2Enlargement) {
             // Mover la region al grupo 1
             addRegion(group1, node->regions[next]);
-            if (node->isLeaf) group2->data.push_back(node->data[next]);
-            else group2->childs.push_back(node->childs[next]);
+            if (node->isLeaf) group1->data.push_back(node->data[next]);
+            else group1->childs.push_back(node->childs[next]);
         }
         else if (group1Enlargement > group2Enlargement) {
             // Mover la region al grupo 2
@@ -160,8 +172,8 @@ Node* RTree::splitNode(Node* node) const {
             // Mover al que tiene menos regiones
             if (group1->regions.size() < group2->regions.size()) {
                 addRegion(group1, node->regions[next]);
-                if (node->isLeaf) group2->data.push_back(node->data[next]);
-                else group2->childs.push_back(node->childs[next]);
+                if (node->isLeaf) group1->data.push_back(node->data[next]);
+                else group1->childs.push_back(node->childs[next]);
             }
             else {
                 addRegion(group2, node->regions[next]);
@@ -171,19 +183,20 @@ Node* RTree::splitNode(Node* node) const {
         }
         node->regions.erase(node->regions.begin() + next);
         if (node->isLeaf) node->data.erase(node->data.begin() + next);
-        else node->childs.erase(node->childs.begin() + next);;
+        else node->childs.erase(node->childs.begin() + next);
     } while (!node->regions.empty());
     node->regions = group1->regions;
+    node->rect = group1->rect;
     if (node->isLeaf) node->data = group1->data;
     else node->childs = group1->childs;
     return group2;
 }
 
-void RTree::insert(const Data &data) {
+void RTree::insert(const Data data) {
     // Calcular bounding box
     Rect bb = getBoundingBox(data);
     if (!root) {
-        root = new Node();
+        root = new Node(true);
         addRegion(root, bb);
         root->data.push_back(new Data(data));
         return;
@@ -200,12 +213,13 @@ void RTree::insert(const Data &data) {
     addRegion(curr, bb);
     curr->data.push_back(new Data(data));
     Node *curr2 = nullptr;
+    bool rootSplit = false;
     // Si el nodo es invalido, hacer split
     if (curr->regions.size() > order) {
         curr2 = splitNode(curr);
+        if (curr == root) rootSplit = true;
     }
     // Ajustar el arbol
-    bool rootSplit = false;
     do {
         if (curr == root) break;
         auto parent = parents.top().node;
@@ -228,7 +242,7 @@ void RTree::insert(const Data &data) {
     // Cambiar al root si se hizo un split
     if (rootSplit) {
         assert(curr2 != nullptr);
-        root = new Node();
+        root = new Node(false);
         addRegion(root, curr->rect);
         addRegion(root, curr2->rect);
         root->childs.push_back(curr);
@@ -239,12 +253,12 @@ void RTree::insert(const Data &data) {
 static void showNode(Node* node, cv::InputOutputArray &img) {
     if (node == nullptr) return;
     for (const auto &r : node->regions) {
-        cv::rectangle(img, {r.x_low, r.y_low}, {r.x_high, r.y_high}, {0,0,0}, 2);
+        cv::rectangle(img, {r.x_low, r.y_low}, {r.x_high-1, r.y_high-1}, {0,0,0}, 2);
     }
     if (node->isLeaf) {
         for (const auto &d : node->data) {
             if (d->size() == 1) {
-                cv::circle(img, d->front(), radius, {0,0,0}, -1);
+                cv::circle(img, d->front(), radius, {255,0,0}, -1);
             }
             else {
                 cv::polylines(img, *d, true, {0,0,0}, 2);

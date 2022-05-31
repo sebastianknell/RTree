@@ -29,6 +29,7 @@ struct Node {
     vector<Node*> childs;
     bool isLeaf;
     vector<Data*> data; // valido si es hoja
+    explicit Node(bool isLeaf): isLeaf(isLeaf) {};
 };
 
 using pos = struct {Node* node; int index;};
@@ -39,7 +40,7 @@ class RTree {
     Node* splitNode(Node*) const;
 public:
     RTree(int order = 3);
-    void insert(const Data&);
+    void insert(const Data);
     void remove(Point);
     void show(cv::InputOutputArray&);
 };
