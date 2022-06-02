@@ -23,10 +23,12 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
             else {
                 drawing = true;
                 currentDrawing.emplace_back(x, y);
+                cv::circle(img, {x, y}, radius, {0, 0, 0}, -1);
             }
         }
         else {
-            cv::line(img, currentDrawing.back(), {x, y}, {0 , 0, 0}, 2);
+            cv::line(img, currentDrawing.back(), {x, y}, colors[3], 2);
+            cv::circle(img, {x, y}, radius, {0, 0, 0}, -1);
             if (isInCircle({x, y}, currentDrawing.front(), radius)) {
                 for (auto &p : currentDrawing) cout << p.x << ", " << p.y << " | ";
                 cout << endl;

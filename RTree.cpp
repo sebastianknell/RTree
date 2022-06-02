@@ -50,7 +50,7 @@ static Rect getBoundingBox(const Data &data) {
     if (data.size() == 1) { // Es un punto
         return {data.front().x, data.front().y, data.front().x, data.front().y};
     }
-    else{
+    else {
         Rect bBox;
         bBox.x_high = bBox.x_low = data.front().x;
         bBox.y_low = bBox.y_high = data.front().y;
@@ -267,22 +267,13 @@ void RTree::insert(const Data data) {
     }
 }
 
-static cv::Scalar colors[] = {
-        {106, 100, 208},
-        {233, 145, 198},
-        {255, 221, 137},
-        {255, 170, 130},
-        {141, 232, 195},
-        {107, 203, 255}
-};
-
 int colorIdx = 0;
 
 static void showNode(Node* node, cv::InputOutputArray &img) {
     // TODO pintar el arbol de arriba hacia abajo para que las hojas no pinten por encima a las regiones superiores
     if (node == nullptr) return;
     for (const auto &r : node->regions) {
-        cv::rectangle(img, {r.x_low, r.y_low}, {r.x_high-1, r.y_high-1}, colors[colorIdx%6], 1);
+        cv::rectangle(img, {r.x_low, r.y_low}, {r.x_high-1, r.y_high-1}, colors[colorIdx%6], 2);
     }
     colorIdx++;
     if (node->isLeaf) {
@@ -291,7 +282,8 @@ static void showNode(Node* node, cv::InputOutputArray &img) {
                 cv::circle(img, d->front(), radius, colors[3], -1);
             }
             else {
-                cv::polylines(img, *d, true, colors[3], -1);
+//                cv::polylines(img, *d, true, colors[3], 2);
+                cv::fillPoly(img, *d, colors[3]);
             }
         }
     }
