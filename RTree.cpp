@@ -298,3 +298,73 @@ void RTree::show(cv::InputOutputArray &img) {
     colorIdx = 0;
     showNode(root, img);
 }
+
+Node* RTree::findLeaf(Node* current, const Data& record) {
+
+    // [Search Subtrees] if T is not a leaf, check each entry F in T to determine
+    // if Fi overlaps Ei for each such entry invoke findLeaf on the tree whose
+    // root is pointed to by Fp until E is found or all entries have been checked
+    if(!current->isLeaf) {
+
+        for(auto reg : current->regions){
+            // Check if overlap? -> Hacer funcion externa?
+            if(reg.x_high >= record.front().x && reg.x_low <= record.front().x){
+                if(reg.y_high >= record.front().y & reg.y_low <= record.front().y){
+                    findLeaf() // Que es lo que le tengo que comparar? region?
+                    // Tengo pasarle un child a la funcion?
+                }
+            }
+        }
+    }
+
+    // [Search leaf node for record] If T is a leaf, check each entry to see if it
+    // matches E if E is found return T.
+    else{
+
+    }
+}
+
+void RTree::condenseTree(Node* node) {
+
+    // Dado un nodo hoja L donde se ha eliminado un entry, eliminar el nodo
+    // si es que tiene muy pocas entries y relocalizarlas. Propagar la eliminacion
+    // hacia arriba como sea necesario.
+    // Ajustar los rectangulos en el camino al root, achicandolos si es posible.
+
+    // step1: Set N = L, Set Q as empty -> the set of eliminated nodes
+
+    // step2: [Find parent entry] If N is the root, go to step6. Otherwise, let P be the parent
+    // of N and let En be N's entry in P.
+
+    // step3: [Eliminate under-full node]
+    // if N has fewer than m entires, delete En from P and add N to set Q.
+
+    // step4: [Adjust covering rectangle]
+    // if N has not been eliminated, adjust En I to tightly contain all entries in N.
+
+    // step5: [Move up one level in tree]
+    // Set N = P and repeat from step2.
+
+    // step6: [Re-insert orphaned entires]
+    // Reinsert all entries of nodes in set Q.
+    // Entires from eliminated leaf nodes are reinserted in tree leaves as described
+    // in Algorithm Insert, but entries from higher-level nodes must be placed higeher
+    // in the tree, so that leaves of their dependent subtrees will be on the same level as leaves
+    // of the main tree.
+
+}
+
+void RTree::remove(Point) {
+
+    // FIND node containing containing record E.
+
+    // Invoke FindLeaf to locate the Leaf node L containing E. Stop if E was not found.
+
+    // Delete record. -> Remove E from L.
+
+    // Propagate changes. Invoke CondenseTree, passing L.
+
+    // Shorten tree. If the root node has only one child after the tree has been adjusted,
+    // make the child the new root.
+
+}
