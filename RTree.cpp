@@ -10,6 +10,10 @@ bool isInCircle(Point p, Point circleP, int r) {
     return (pow(p.x - circleP.x, 2) + pow(p.y - circleP.y, 2)) <= pow(r, 2);
 }
 
+bool isInRect(const Point &p, const Rect &rect) {
+    return p.x >= rect.x_low && p.x <= rect.x_high && p.y >= rect.y_low && p.y <= rect.y_high;
+}
+
 static bool operator==(const Rect &a, const Rect &b) {
     return a.x_low == b.x_low && a.x_high == b.x_high && a.y_low == b.y_low && a.y_high == b.y_high;
 }
@@ -220,6 +224,7 @@ void RTree::insert(const Data data) {
     }
     // Buscar region
     auto curr = root;
+    using pos = struct {Node* node; Rect* region;};
     stack<pos> parents;
     while (!curr->isLeaf) {
         auto regionIndex = getBestRegion(curr, bb);
@@ -267,61 +272,17 @@ void RTree::insert(const Data data) {
     }
 }
 
-int colorIdx = 0;
-
-static void showNode(Node* node, cv::InputOutputArray &img) {
-    // TODO pintar el arbol de arriba hacia abajo para que las hojas no pinten por encima a las regiones superiores
-    if (node == nullptr) return;
-    for (const auto &r : node->regions) {
-        cv::rectangle(img, {r.x_low, r.y_low}, {r.x_high-1, r.y_high-1}, colors[colorIdx%6], 2);
-    }
-    colorIdx++;
-    if (node->isLeaf) {
-        for (const auto &d : node->data) {
-            if (d->size() == 1) {
-                cv::circle(img, d->front(), radius, colors[3], -1);
-            }
-            else {
-//                cv::polylines(img, *d, true, colors[3], 2);
-                cv::fillPoly(img, *d, colors[3]);
-            }
-        }
-    }
-    else {
-        for (const auto &c : node->childs) {
-            showNode(c, img);
-        }
-    }
+static bool isOverlapping(const Rect &rect, const Rect &region) {
+    return isInRect({rect.x_low, rect.y_low}, region) &&
+            isInRect({rect.x_low, rect.y_high}, region) &&
+            isInRect({rect.x_high, rect.y_low}, region) &&
+            isInRect({rect.x_high, rect.y_high}, region);
 }
 
-void RTree::show(cv::InputOutputArray &img) {
-    colorIdx = 0;
-    showNode(root, img);
-}
-
-Node* RTree::findLeaf(Node* current, const Data& record) {
-
+Node* RTree::findLeaf(Node* curr, const Rect &bb) {
     // [Search Subtrees] if T is not a leaf, check each entry F in T to determine
     // if Fi overlaps Ei for each such entry invoke findLeaf on the tree whose
     // root is pointed to by Fp until E is found or all entries have been checked
-    if(!current->isLeaf) {
-
-        for(auto reg : current->regions){
-            // Check if overlap? -> Hacer funcion externa?
-            if(reg.x_high >= record.front().x && reg.x_low <= record.front().x){
-                if(reg.y_high >= record.front().y & reg.y_low <= record.front().y){
-                    findLeaf() // Que es lo que le tengo que comparar? region?
-                    // Tengo pasarle un child a la funcion?
-                }
-            }
-        }
-    }
-
-    // [Search leaf node for record] If T is a leaf, check each entry to see if it
-    // matches E if E is found return T.
-    else{
-
-    }
 }
 
 void RTree::condenseTree(Node* node) {
@@ -354,17 +315,89 @@ void RTree::condenseTree(Node* node) {
 
 }
 
-void RTree::remove(Point) {
+void RTree::remove(const Data data) {
+    auto bb = getBoundingBox(data);
+    using pos = struct {Node* node; int index;};
+    stack<pos> parents;
+    auto curr = root;
+    bool found = false;
+    // Encontrar hoja en recorrido dfs y quedarme con el stack de padres
+    if (!curr->isLeaf) {
+        for (int i = 0; i < curr->regions.size(); i++) {
+            if (isOverlapping(bb, curr->regions[i])) {
+                parents.push({curr->childs[i], i});
+            }
+        }
+    }
+    else {
+        for (auto d : curr->data) {
+            if (*d == data) {
+                found = true;
+                break;
+            }
+        }
+    }
+    while (!parents.empty() && !found) {
+        curr = parents.top().node;
+        if (!curr->isLeaf) {
+            bool isCandidate = false;
+            for (int i = 0; i < curr->regions.size(); i++) {
+                if (isOverlapping(bb, curr->regions[i])) {
+                    parents.push({curr->childs[i], i});
+                    isCandidate = true;
+                }
+            }
+            if (!isCandidate) parents.pop();
+        }
+        else {
+            for (auto d : curr->data) {
+                if (*d == data) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) parents.pop();
+        }
+    }
+    // Si no se encontro, terminar
+    if (!found) return;
+    // Eliminar data
+    assert(curr->isLeaf);
+    auto currIndex = parents.top().index;
+    curr->regions.erase(curr->regions.begin() + currIndex);
+    curr->data.erase(curr->data.begin() + currIndex);
 
-    // FIND node containing containing record E.
+    // Condensar arbol
+}
 
-    // Invoke FindLeaf to locate the Leaf node L containing E. Stop if E was not found.
+int colorIdx = 0;
 
-    // Delete record. -> Remove E from L.
+static void showNode(Node* node, cv::InputOutputArray &img) {
+    // TODO pintar el arbol de arriba hacia abajo para que las hojas no pinten por encima a las regiones superiores
+    if (node == nullptr) return;
+    for (const auto &r : node->regions) {
+        cv::rectangle(img, {r.x_low, r.y_low}, {r.x_high-1, r.y_high-1}, colors[colorIdx%6], 2);
+    }
+    colorIdx++;
+    if (node->isLeaf) {
+        for (const auto &d : node->data) {
+            if (d->size() == 1) {
+                cv::circle(img, d->front(), radius, colors[3], -1);
+            }
+            else {
+//                cv::polylines(img, *d, true, colors[3], 2);
+                cv::fillPoly(img, *d, colors[3]);
+            }
+        }
+    }
+    else {
+        for (const auto &c : node->childs) {
+            showNode(c, img);
+        }
+    }
+}
 
-    // Propagate changes. Invoke CondenseTree, passing L.
-
-    // Shorten tree. If the root node has only one child after the tree has been adjusted,
-    // make the child the new root.
-
+void RTree::show(cv::InputOutputArray &img) {
+    colorIdx = 0;
+    showNode(root, img);
 }

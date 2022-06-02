@@ -39,18 +39,16 @@ struct Node {
     explicit Node(bool);
 };
 
-using pos = struct {Node* node; Rect* region;};
-
 class RTree {
     Node* root;
     int order;
     Node* splitNode(Node*) const;
-    Node* findLeaf(Node*, const Data&);
+    Node* findLeaf(Node*, const Rect&);
     void condenseTree(Node*);
 public:
     RTree(int order = 3);
     void insert(const Data);
-    void remove(Point);
+    void remove(const Data);
     void show(cv::InputOutputArray&);
 };
 
