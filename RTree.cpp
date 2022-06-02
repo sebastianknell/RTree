@@ -10,6 +10,10 @@ bool isInCircle(Point p, Point circleP, int r) {
     return (pow(p.x - circleP.x, 2) + pow(p.y - circleP.y, 2)) <= pow(r, 2);
 }
 
+static bool operator==(const Rect &a, const Rect &b) {
+    return a.x_low == b.x_low && a.x_high == b.x_high && a.y_low == b.y_low && a.y_high == b.y_high;
+}
+
 static int getPerimeterEnlargement(Rect region, Rect r) {
     auto x_low = min(region.x_low, r.x_low);
     auto y_low = min(region.y_low, r.y_low);
@@ -63,6 +67,8 @@ static Rect getBoundingRect(const vector<Rect> &regions) {
 
 
 RTree::RTree(int order): order(order), root(nullptr) {}
+
+Node::Node(bool isLeaf): isLeaf(isLeaf) {}
 
 static pair<int,int> pickSeeds(const vector<Rect> &regions) {
     // Escoger primeras 2 regiones
@@ -206,7 +212,7 @@ void RTree::insert(const Data data) {
     stack<pos> parents;
     while (!curr->isLeaf) {
         auto regionIndex = getBestRegion(curr, bb);
-        parents.push({curr, regionIndex});
+        parents.push({curr, &curr->regions[regionIndex]});
         curr = curr->childs[regionIndex];
     }
     // Insertar
@@ -223,11 +229,11 @@ void RTree::insert(const Data data) {
     do {
         if (curr == root) break;
         auto parent = parents.top().node;
-        auto indexInParent = parents.top().index;
+        auto regionInParent = parents.top().region;
         parents.pop();
         // Ajustar la region en el padre
-        parent->regions[indexInParent] = curr->rect;
-        parent->rect = getBoundingRect(parent->regions); // Todo cambiar por una funcion updateRegion
+        *regionInParent = curr->rect;
+        parent->rect = getBoundingRect(parent->regions);
         // Propagar split hacia arriba
         if (curr2) {
             addRegion(parent, curr2->rect);
@@ -250,18 +256,31 @@ void RTree::insert(const Data data) {
     }
 }
 
+static cv::Scalar colors[] = {
+        {106, 100, 208},
+        {233, 145, 198},
+        {255, 221, 137},
+        {255, 170, 130},
+        {141, 232, 195},
+        {107, 203, 255}
+};
+
+int colorIdx = 0;
+
 static void showNode(Node* node, cv::InputOutputArray &img) {
+    // TODO pintar el arbol de arriba hacia abajo para que las hojas no pinten por encima a las regiones superiores
     if (node == nullptr) return;
     for (const auto &r : node->regions) {
-        cv::rectangle(img, {r.x_low, r.y_low}, {r.x_high-1, r.y_high-1}, {0,0,0}, 2);
+        cv::rectangle(img, {r.x_low, r.y_low}, {r.x_high-1, r.y_high-1}, colors[colorIdx%6], 1);
     }
+    colorIdx++;
     if (node->isLeaf) {
         for (const auto &d : node->data) {
             if (d->size() == 1) {
-                cv::circle(img, d->front(), radius, {255,0,0}, -1);
+                cv::circle(img, d->front(), radius, colors[3], -1);
             }
             else {
-                cv::polylines(img, *d, true, {0,0,0}, 2);
+                cv::polylines(img, *d, true, colors[3], -1);
             }
         }
     }
@@ -273,5 +292,6 @@ static void showNode(Node* node, cv::InputOutputArray &img) {
 }
 
 void RTree::show(cv::InputOutputArray &img) {
+    colorIdx = 0;
     showNode(root, img);
 }

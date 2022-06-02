@@ -7,9 +7,7 @@
 
 #include <vector>
 #include <stack>
-//#include <cstdlib>
 #include <algorithm>
-//#include <utility>
 #include <cmath>
 #include <opencv2/opencv.hpp>
 
@@ -29,10 +27,10 @@ struct Node {
     vector<Node*> childs;
     bool isLeaf;
     vector<Data*> data; // valido si es hoja
-    explicit Node(bool isLeaf): isLeaf(isLeaf) {};
+    explicit Node(bool);
 };
 
-using pos = struct {Node* node; int index;};
+using pos = struct {Node* node; Rect* region;};
 
 class RTree {
     Node* root;
