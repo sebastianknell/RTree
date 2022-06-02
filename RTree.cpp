@@ -50,7 +50,18 @@ static Rect getBoundingBox(const Data &data) {
     if (data.size() == 1) { // Es un punto
         return {data.front().x, data.front().y, data.front().x, data.front().y};
     }
-
+    else{
+        Rect bBox;
+        bBox.x_high = bBox.x_low = data.front().x;
+        bBox.y_low = bBox.y_high = data.front().y;
+        for(const auto& vertex : data){
+            if(vertex.x < bBox.x_low) bBox.x_low = vertex.x;
+            else if(vertex.x > bBox.x_high) bBox.x_high = vertex.x;
+            if(vertex.y < bBox.y_low) bBox.y_low = vertex.y;
+            else if(vertex.y > bBox.y_high) bBox.y_high = vertex.y;
+        }
+        return bBox;
+    }
 }
 
 static Rect getBoundingRect(const vector<Rect> &regions) {

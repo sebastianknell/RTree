@@ -30,6 +30,9 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
             if (isInCircle({x, y}, currentDrawing.front(), radius)) {
                 for (auto &p : currentDrawing) cout << p.x << ", " << p.y << " | ";
                 cout << endl;
+                rtree.insert(currentDrawing);
+                img.setTo(cv::Scalar(255,255,255));
+                rtree.show(img);
                 currentDrawing.clear();
                 drawing = false;
             }
