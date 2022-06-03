@@ -135,21 +135,29 @@ static int pickNext(const vector<Rect> &regions, Rect group1, Rect group2) {
 Node* RTree::splitNode(Node* node) const {
     // TODO refactor y optimizar
     auto seeds = pickSeeds(node->regions);
+    assert(seeds.first != seeds.second);
     auto group1 = new Node(node->isLeaf), group2 = new Node(node->isLeaf);
     addRegion(group1, node->regions[seeds.first]);
     addRegion(group2, node->regions[seeds.second]);
-    node->regions.erase(node->regions.begin() + seeds.first);
-    if (seeds.first < seeds.second) seeds.second -= 1; // los indices pueden cambiar luego de borrar
-    node->regions.erase(node->regions.begin() + seeds.second);
+
     if (node->isLeaf) {
         group1->data.push_back(node->data[seeds.first]);
         group2->data.push_back(node->data[seeds.second]);
-        node->data.erase(node->data.begin() + seeds.first);
-        node->data.erase(node->data.begin() + seeds.second);
     }
     else {
         group1->childs.push_back(node->childs[seeds.first]);
         group2->childs.push_back(node->childs[seeds.second]);
+    }
+
+    node->regions.erase(node->regions.begin() + seeds.first);
+    if (seeds.first < seeds.second) seeds.second -= 1; // los indices pueden cambiar luego de borrar
+    node->regions.erase(node->regions.begin() + seeds.second);
+
+    if (node->isLeaf) {
+        node->data.erase(node->data.begin() + seeds.first);
+        node->data.erase(node->data.begin() + seeds.second);
+    }
+    else {
         node->childs.erase(node->childs.begin() + seeds.first);
         node->childs.erase(node->childs.begin() + seeds.second);
     }
@@ -331,6 +339,7 @@ void RTree::remove(const Data data) {
     }
     else {
         for (auto d : curr->data) {
+            // TODO revisar
             if (*d == data) {
                 found = true;
                 break;
@@ -368,6 +377,8 @@ void RTree::remove(const Data data) {
     curr->data.erase(curr->data.begin() + currIndex);
 
     // Condensar arbol
+
+    // Ajustar root
 }
 
 int colorIdx = 0;
@@ -375,22 +386,26 @@ int colorIdx = 0;
 static void showNode(Node* node, cv::InputOutputArray &img) {
     // TODO pintar el arbol de arriba hacia abajo para que las hojas no pinten por encima a las regiones superiores
     if (node == nullptr) return;
-    for (const auto &r : node->regions) {
-        cv::rectangle(img, {r.x_low, r.y_low}, {r.x_high-1, r.y_high-1}, colors[colorIdx%6], 2);
-    }
+//    for (const auto &r : node->regions) {
+//        cv::rectangle(img, {r.x_low, r.y_low}, {r.x_high-1, r.y_high-1}, colors[colorIdx%6], 2);
+//    }
     colorIdx++;
     if (node->isLeaf) {
-        for (const auto &d : node->data) {
-            if (d->size() == 1) {
-                cv::circle(img, d->front(), radius, colors[3], -1);
+        for (int i = 0; i < node->regions.size(); i++) {
+            if (node->data[i]->size() == 1) {
+                cv::circle(img, node->data[i]->back(), radius*2, colors[3], -1);
             }
             else {
+                cv::rectangle(img, {node->regions[i].x_low, node->regions[i].y_low}, {node->regions[i].x_high-1, node->regions[i].y_high-1}, colors[3], 2);
 //                cv::polylines(img, *d, true, colors[3], 2);
-                cv::fillPoly(img, *d, colors[3]);
+                cv::fillPoly(img, *(node->data[i]), colors[3]);
             }
         }
     }
     else {
+        for (const auto &r : node->regions) {
+            cv::rectangle(img, {r.x_low, r.y_low}, {r.x_high-1, r.y_high-1}, colors[colorIdx%6], 2);
+        }
         for (const auto &c : node->childs) {
             showNode(c, img);
         }

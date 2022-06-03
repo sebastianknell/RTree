@@ -5,6 +5,7 @@
 #ifndef RTREE_RTREE_H
 #define RTREE_RTREE_H
 
+#include <iostream>
 #include <vector>
 #include <stack>
 #include <algorithm>

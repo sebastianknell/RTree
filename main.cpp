@@ -1,4 +1,3 @@
-#include <iostream>
 #include "RTree.h"
 
 using namespace std;
@@ -15,7 +14,7 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
     if (event == cv::EVENT_LBUTTONDOWN) {
         if (!drawing) {
             if (flags == (cv::EVENT_FLAG_ALTKEY + cv::EVENT_FLAG_LBUTTON)) {
-                cout << x << ", " << y;
+                cout << x << ", " << y << endl;
                 rtree.insert({{x, y}});
                 img.setTo(cv::Scalar(255, 255, 255));
                 rtree.show(img);
@@ -45,7 +44,18 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
 }
 
 int main() {
-    cv::imshow(windowName, img);
+    rtree.insert({{184, 76}});
+    rtree.insert({{776, 138}});
+    rtree.insert({{582, 354}});
+    rtree.insert({{228, 229}});
+    rtree.insert({{281, 316}});
+    rtree.insert({{177, 370}});
+    rtree.insert({{100, 269}});
+    rtree.insert({{324, 164}});
+    rtree.insert({{671, 254}});
+    rtree.insert({{200, 435}});
+
+
 //    cv::setWindowProperty(windowName, cv::WND_PROP_TOPMOST, 1);
     cv::setMouseCallback(windowName, clickHandler);
 
