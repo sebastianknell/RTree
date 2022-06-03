@@ -41,6 +41,19 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
         }
         cv::imshow(windowName, img);
     }
+    if(event == cv::EVENT_RBUTTONDOWN){
+        auto searchRect = getSearchRectangle({x,y}, radius);
+        auto point = rtree.search(searchRect);
+        if(point.x == 1000 && point.y == 2000) cout << "No se encontro el punto.\n";
+        else{
+            Data data;
+            data.push_back(point);
+            rtree.remove(data);
+            img.setTo(cv::Scalar(255, 255, 255));
+            rtree.show(img);
+        }
+        cv::imshow(windowName, img);
+    }
 }
 
 int main() {

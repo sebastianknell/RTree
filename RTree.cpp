@@ -6,6 +6,15 @@
 
 int radius = 4;
 
+Rect getSearchRectangle(const Point& query, int r){
+    Rect rect;
+    rect.x_low = query.x - r;
+    rect.x_high = query.x + r;
+    rect.y_low = query.y - r;
+    rect.y_high = query.y + r;
+    return rect;
+}
+
 bool isInCircle(Point p, Point circleP, int r) {
     return (pow(p.x - circleP.x, 2) + pow(p.y - circleP.y, 2)) <= pow(r, 2);
 }
@@ -287,41 +296,74 @@ static bool isOverlapping(const Rect &rect, const Rect &region) {
             isInRect({rect.x_high, rect.y_high}, region);
 }
 
-Node* RTree::findLeaf(Node* curr, const Rect &bb) {
-    // [Search Subtrees] if T is not a leaf, check each entry F in T to determine
-    // if Fi overlaps Ei for each such entry invoke findLeaf on the tree whose
-    // root is pointed to by Fp until E is found or all entries have been checked
+Point RTree::search(Rect searchR) {
+    auto curr = root;
+    stack<Node*> candidates;
+
+    if(!curr->isLeaf){
+        for(int i = 0 ; i < curr->regions.size() ; i ++){
+            if(isOverlapping(searchR, curr->regions[i])) candidates.push(curr->childs[i]);
+        }
+    }
+    while(!candidates.empty()){
+        if(!curr->isLeaf){
+            for(int i = 0 ; i < curr->regions.size() ; i++){
+                if(isOverlapping(searchR, curr->regions[i])) candidates.push(curr->childs[i]);
+            }
+        }
+        else{
+            for(auto entry : curr->data){
+                for(auto point : *entry){
+                    if(point.x >= searchR.x_low
+                       && point.x <= searchR.x_high
+                       && point.y >= searchR.y_low
+                       && point.y <= searchR.y_high) return point;
+                }
+            }
+        }
+    }
+    // Dummy values para cuando no se encontro
+    Point p;
+    p.x = 1000;
+    p.y = 2000;
+    return p;
 }
 
-void RTree::condenseTree(Node* node) {
-
-    // Dado un nodo hoja L donde se ha eliminado un entry, eliminar el nodo
-    // si es que tiene muy pocas entries y relocalizarlas. Propagar la eliminacion
-    // hacia arriba como sea necesario.
-    // Ajustar los rectangulos en el camino al root, achicandolos si es posible.
-
-    // step1: Set N = L, Set Q as empty -> the set of eliminated nodes
-
-    // step2: [Find parent entry] If N is the root, go to step6. Otherwise, let P be the parent
-    // of N and let En be N's entry in P.
-
-    // step3: [Eliminate under-full node]
-    // if N has fewer than m entires, delete En from P and add N to set Q.
-
-    // step4: [Adjust covering rectangle]
-    // if N has not been eliminated, adjust En I to tightly contain all entries in N.
-
-    // step5: [Move up one level in tree]
-    // Set N = P and repeat from step2.
-
-    // step6: [Re-insert orphaned entires]
-    // Reinsert all entries of nodes in set Q.
-    // Entires from eliminated leaf nodes are reinserted in tree leaves as described
-    // in Algorithm Insert, but entries from higher-level nodes must be placed higeher
-    // in the tree, so that leaves of their dependent subtrees will be on the same level as leaves
-    // of the main tree.
-
-}
+//Node* RTree::findLeaf(Node* curr, const Rect &bb) {
+//    // [Search Subtrees] if T is not a leaf, check each entry F in T to determine
+//    // if Fi overlaps Ei for each such entry invoke findLeaf on the tree whose
+//    // root is pointed to by Fp until E is found or all entries have been checked
+//}
+//
+//void RTree::condenseTree(Node* node) {
+//
+//    // Dado un nodo hoja L donde se ha eliminado un entry, eliminar el nodo
+//    // si es que tiene muy pocas entries y relocalizarlas. Propagar la eliminacion
+//    // hacia arriba como sea necesario.
+//    // Ajustar los rectangulos en el camino al root, achicandolos si es posible.
+//
+//    // step1: Set N = L, Set Q as empty -> the set of eliminated nodes
+//
+//    // step2: [Find parent entry] If N is the root, go to step6. Otherwise, let P be the parent
+//    // of N and let En be N's entry in P.
+//
+//    // step3: [Eliminate under-full node]
+//    // if N has fewer than m entires, delete En from P and add N to set Q.
+//
+//    // step4: [Adjust covering rectangle]
+//    // if N has not been eliminated, adjust En I to tightly contain all entries in N.
+//
+//    // step5: [Move up one level in tree]
+//    // Set N = P and repeat from step2.
+//
+//    // step6: [Re-insert orphaned entires]
+//    // Reinsert all entries of nodes in set Q.
+//    // Entires from eliminated leaf nodes are reinserted in tree leaves as described
+//    // in Algorithm Insert, but entries from higher-level nodes must be placed higeher
+//    // in the tree, so that leaves of their dependent subtrees will be on the same level as leaves
+//    // of the main tree.
+//
+//}
 
 void RTree::remove(const Data data) {
     auto bb = getBoundingBox(data);
