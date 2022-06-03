@@ -339,7 +339,6 @@ void RTree::remove(const Data data) {
     }
     else {
         for (auto d : curr->data) {
-            // TODO revisar
             if (*d == data) {
                 found = true;
                 break;
@@ -377,6 +376,45 @@ void RTree::remove(const Data data) {
     curr->data.erase(curr->data.begin() + currIndex);
 
     // Condensar arbol
+    queue<Node*> toReinsert;
+
+    while(curr != root){
+        auto p = parents.top();
+        auto m = (int)order/2 + order%2;
+        if(curr->regions.size() < m){
+            p.node->regions.erase(p.node->regions.begin() + p.index);
+            p.node->childs.erase(p.node->childs.begin() + p.index);
+            toReinsert.push(curr);
+        }
+        else{p.node->rect = getBoundingRect(p.node->regions);}
+
+        parents.pop();
+        curr = p.node;
+    }
+
+    // Re insert all entries
+
+    while(!toReinsert.empty()){
+        auto node = toReinsert.front();
+        toReinsert.pop();
+
+        if(!node->isLeaf){
+            for(auto child: node->childs){
+                toReinsert.push(child);
+            }
+            continue;
+        }
+        else{
+            for(auto element : node->data){
+                insert(*element);
+            }
+        }
+    }
+
+    if(root->childs.size() == 1){
+        root = root->childs.front();
+    }
+
 
     // Ajustar root
 }
