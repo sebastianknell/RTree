@@ -20,6 +20,7 @@ using Data = vector<cv::Point>;
 
 extern int radius;
 extern bool isInCircle(Point p, Point circleP, int radius);
+extern Rect getSearchRectangle(const Point&, int);
 
 static cv::Scalar colors[] = {
         {106, 100, 208},
@@ -46,9 +47,10 @@ class RTree {
     Node* splitNode(Node*) const;
 public:
     RTree(int order = 3);
-    void insert(const Data);
-    void remove(const Data);
+    void insert(Data);
+    void remove(Data);
     void show(cv::InputOutputArray&);
+    Point search(Rect);
 };
 
 
