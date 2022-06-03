@@ -44,8 +44,6 @@ class RTree {
     Node* root;
     int order;
     Node* splitNode(Node*) const;
-    Node* findLeaf(Node*, const Rect&);
-    void condenseTree(Node*);
 public:
     RTree(int order = 3);
     void insert(const Data);

@@ -11,7 +11,7 @@ bool isInCircle(Point p, Point circleP, int r) {
 }
 
 bool isInRect(const Point &p, const Rect &rect) {
-    return p.x >= rect.x_low && p.x <= rect.x_high && p.y >= rect.y_low && p.y <= rect.y_high;
+    return p.x >= rect.x_low - radius && p.x <= rect.x_high + radius && p.y >= rect.y_low - radius && p.y <= rect.y_high + radius;
 }
 
 static bool operator==(const Rect &a, const Rect &b) {
@@ -280,47 +280,12 @@ void RTree::insert(const Data data) {
     }
 }
 
+// Esta rect dentro de region?
 static bool isOverlapping(const Rect &rect, const Rect &region) {
     return isInRect({rect.x_low, rect.y_low}, region) &&
             isInRect({rect.x_low, rect.y_high}, region) &&
             isInRect({rect.x_high, rect.y_low}, region) &&
             isInRect({rect.x_high, rect.y_high}, region);
-}
-
-Node* RTree::findLeaf(Node* curr, const Rect &bb) {
-    // [Search Subtrees] if T is not a leaf, check each entry F in T to determine
-    // if Fi overlaps Ei for each such entry invoke findLeaf on the tree whose
-    // root is pointed to by Fp until E is found or all entries have been checked
-}
-
-void RTree::condenseTree(Node* node) {
-
-    // Dado un nodo hoja L donde se ha eliminado un entry, eliminar el nodo
-    // si es que tiene muy pocas entries y relocalizarlas. Propagar la eliminacion
-    // hacia arriba como sea necesario.
-    // Ajustar los rectangulos en el camino al root, achicandolos si es posible.
-
-    // step1: Set N = L, Set Q as empty -> the set of eliminated nodes
-
-    // step2: [Find parent entry] If N is the root, go to step6. Otherwise, let P be the parent
-    // of N and let En be N's entry in P.
-
-    // step3: [Eliminate under-full node]
-    // if N has fewer than m entires, delete En from P and add N to set Q.
-
-    // step4: [Adjust covering rectangle]
-    // if N has not been eliminated, adjust En I to tightly contain all entries in N.
-
-    // step5: [Move up one level in tree]
-    // Set N = P and repeat from step2.
-
-    // step6: [Re-insert orphaned entires]
-    // Reinsert all entries of nodes in set Q.
-    // Entires from eliminated leaf nodes are reinserted in tree leaves as described
-    // in Algorithm Insert, but entries from higher-level nodes must be placed higeher
-    // in the tree, so that leaves of their dependent subtrees will be on the same level as leaves
-    // of the main tree.
-
 }
 
 void RTree::remove(const Data data) {
@@ -333,34 +298,50 @@ void RTree::remove(const Data data) {
     if (!curr->isLeaf) {
         for (int i = 0; i < curr->regions.size(); i++) {
             if (isOverlapping(bb, curr->regions[i])) {
-                parents.push({curr->childs[i], i});
+                parents.push({curr, i});
             }
         }
     }
     else {
-        for (auto d : curr->data) {
-            if (*d == data) {
+        for (int i = 0; i < curr->regions.size(); i++) {
+            if (curr->data[i]->size() == 1 && data.size() == 1) {
+                if (isInCircle(data.front(), curr->data[i]->front(), radius)) {
+                    found = true;
+                }
+            }
+            else if (*curr->data[i] == data) {
                 found = true;
+            }
+            if (found) {
+                parents.push({curr, i});
                 break;
             }
         }
     }
     while (!parents.empty() && !found) {
-        curr = parents.top().node;
+        curr = parents.top().node->childs[parents.top().index];
         if (!curr->isLeaf) {
             bool isCandidate = false;
             for (int i = 0; i < curr->regions.size(); i++) {
                 if (isOverlapping(bb, curr->regions[i])) {
-                    parents.push({curr->childs[i], i});
+                    parents.push({curr, i});
                     isCandidate = true;
                 }
             }
             if (!isCandidate) parents.pop();
         }
         else {
-            for (auto d : curr->data) {
-                if (*d == data) {
+            for (int i = 0; i < curr->regions.size(); i++) {
+                if (curr->data[i]->size() == 1 && data.size() == 1) {
+                    if (isInCircle(data.front(), curr->data[i]->front(), radius)) {
+                        found = true;
+                    }
+                }
+                else if (*curr->data[i] == data) {
                     found = true;
+                }
+                if (found) {
+                    parents.push({curr, i});
                     break;
                 }
             }
@@ -372,13 +353,15 @@ void RTree::remove(const Data data) {
     // Eliminar data
     assert(curr->isLeaf);
     auto currIndex = parents.top().index;
+    parents.pop();
     curr->regions.erase(curr->regions.begin() + currIndex);
+    curr->rect = getBoundingRect(curr->regions);
     curr->data.erase(curr->data.begin() + currIndex);
 
     // Condensar arbol
     queue<Node*> toReinsert;
 
-    while(curr != root){
+    while(!parents.empty() && curr != root){
         auto p = parents.top();
         auto m = (int)order/2 + order%2;
         if(curr->regions.size() < m){
@@ -386,7 +369,10 @@ void RTree::remove(const Data data) {
             p.node->childs.erase(p.node->childs.begin() + p.index);
             toReinsert.push(curr);
         }
-        else{p.node->rect = getBoundingRect(p.node->regions);}
+        else {
+            p.node->regions[p.index] = curr->rect;
+        }
+        p.node->rect = getBoundingRect(p.node->regions);
 
         parents.pop();
         curr = p.node;
@@ -411,12 +397,12 @@ void RTree::remove(const Data data) {
         }
     }
 
-    if(root->childs.size() == 1){
-        root = root->childs.front();
-    }
-
-
     // Ajustar root
+    if (root->childs.size() == 1) {
+        auto temp = root;
+        root = root->childs.front();
+        delete temp;
+    }
 }
 
 int colorIdx = 0;
@@ -424,19 +410,15 @@ int colorIdx = 0;
 static void showNode(Node* node, cv::InputOutputArray &img) {
     // TODO pintar el arbol de arriba hacia abajo para que las hojas no pinten por encima a las regiones superiores
     if (node == nullptr) return;
-//    for (const auto &r : node->regions) {
-//        cv::rectangle(img, {r.x_low, r.y_low}, {r.x_high-1, r.y_high-1}, colors[colorIdx%6], 2);
-//    }
     colorIdx++;
     if (node->isLeaf) {
         for (int i = 0; i < node->regions.size(); i++) {
             if (node->data[i]->size() == 1) {
-                cv::circle(img, node->data[i]->back(), radius*2, colors[3], -1);
+                cv::circle(img, node->data[i]->back(), radius, colors[3], -1);
             }
             else {
                 cv::rectangle(img, {node->regions[i].x_low, node->regions[i].y_low}, {node->regions[i].x_high-1, node->regions[i].y_high-1}, colors[3], 2);
-//                cv::polylines(img, *d, true, colors[3], 2);
-                cv::fillPoly(img, *(node->data[i]), colors[3]);
+                cv::polylines(img, *node->data[i], true, colors[3], 2);
             }
         }
     }

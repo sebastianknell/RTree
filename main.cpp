@@ -41,6 +41,13 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
         }
         cv::imshow(windowName, img);
     }
+    else if (event == cv::EVENT_RBUTTONDOWN) {
+        cout << x << ", " << y << endl;
+        rtree.remove({{x, y}});
+        img.setTo(cv::Scalar(255, 255, 255));
+        rtree.show(img);
+        cv::imshow(windowName, img);
+    }
 }
 
 int main() {
@@ -54,7 +61,9 @@ int main() {
     rtree.insert({{324, 164}});
     rtree.insert({{671, 254}});
     rtree.insert({{200, 435}});
-
+    rtree.show(img);
+    cv::imshow(windowName, img);
+    cv::waitKey(1);
 
 //    cv::setWindowProperty(windowName, cv::WND_PROP_TOPMOST, 1);
     cv::setMouseCallback(windowName, clickHandler);
