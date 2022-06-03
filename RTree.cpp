@@ -403,6 +403,10 @@ void RTree::remove(const Data data) {
         }
     }
 
+    if(root->childs.size() == 1){
+        root = root->childs.front();
+    }
+
 }
 
 int colorIdx = 0;
