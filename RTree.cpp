@@ -288,7 +288,32 @@ static bool isOverlapping(const Rect &rect, const Rect &region) {
             isInRect({rect.x_high, rect.y_high}, region);
 }
 
-void RTree::remove(const Data data) {
+void dfs(vector<Data*> &toReinsert, Node* rt){
+
+    if(rt->isLeaf){
+        auto data = rt->data;
+        toReinsert.insert(toReinsert.begin(), data.begin(), data.end());
+        return;
+    }
+
+    for(auto node : rt->childs){
+        dfs(toReinsert, node);
+    }
+}
+
+void RTree::reinsert(){
+
+    vector<Data*> toReinsert;
+
+    dfs(toReinsert, root);
+    this->root = new Node(true);
+
+    for(auto dat : toReinsert){
+        insert(*dat);
+    }
+}
+
+void RTree::remove(const Data& data) {
     auto bb = getBoundingBox(data);
     using pos = struct {Node* node; int index;};
     stack<pos> parents;
@@ -350,59 +375,30 @@ void RTree::remove(const Data data) {
     }
     // Si no se encontro, terminar
     if (!found) return;
+
     // Eliminar data
     assert(curr->isLeaf);
-    auto currIndex = parents.top().index;
+    auto parent = parents.top();
     parents.pop();
+    auto currIndex = parent.index;
     curr->regions.erase(curr->regions.begin() + currIndex);
-    curr->rect = getBoundingRect(curr->regions);
     curr->data.erase(curr->data.begin() + currIndex);
+    curr->rect = getBoundingRect(curr->regions);
 
-    // Condensar arbol
-    queue<Node*> toReinsert;
-
-    while(!parents.empty() && curr != root){
-        auto p = parents.top();
-        auto m = (int)order/2 + order%2;
-        if(curr->regions.size() < m){
-            p.node->regions.erase(p.node->regions.begin() + p.index);
-            p.node->childs.erase(p.node->childs.begin() + p.index);
-            toReinsert.push(curr);
-        }
-        else {
-            p.node->regions[p.index] = curr->rect;
-        }
-        p.node->rect = getBoundingRect(p.node->regions);
-
+    // Adjust Parent Bounding Boxes
+    parent.node->rect = getBoundingRect(parent.node->regions);
+    while(!parents.empty()){
+        parent = parents.top();
         parents.pop();
-        curr = p.node;
+        parent.node->rect = getBoundingRect(parent.node->regions);
     }
 
-    // Re insert all entries
+    // Si no hay huerfanos, return.
+    auto minEntries = (int)order/2 + order%2;
+    if(curr->data.size() >= minEntries || curr == root) return;
 
-    while(!toReinsert.empty()){
-        auto node = toReinsert.front();
-        toReinsert.pop();
-
-        if(!node->isLeaf){
-            for(auto child: node->childs){
-                toReinsert.push(child);
-            }
-            continue;
-        }
-        else{
-            for(auto element : node->data){
-                insert(*element);
-            }
-        }
-    }
-
-    // Ajustar root
-    if (root->childs.size() == 1) {
-        auto temp = root;
-        root = root->childs.front();
-        delete temp;
-    }
+    // Reinsertar data huerfana
+    reinsert();
 }
 
 int colorIdx = 0;
