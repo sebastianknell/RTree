@@ -378,19 +378,25 @@ void RTree::remove(const Data& data) {
 
     // Eliminar data
     assert(curr->isLeaf);
-    auto parent = parents.top();
+    auto currIndex = parents.top().index;
     parents.pop();
-    auto currIndex = parent.index;
     curr->regions.erase(curr->regions.begin() + currIndex);
     curr->data.erase(curr->data.begin() + currIndex);
     curr->rect = getBoundingRect(curr->regions);
+    auto temp = curr;
 
     // Adjust Parent Bounding Boxes
-    parent.node->rect = getBoundingRect(parent.node->regions);
-    while(!parents.empty()){
-        parent = parents.top();
+    while(!parents.empty() && temp != root){
+        auto p = parents.top();
+        auto m = (int)order/2 + order%2;
+
+        if(temp->regions.size() >= m){
+            p.node->regions[p.index] = temp->rect;
+        }
+        p.node->rect = getBoundingRect(p.node->regions);
+
         parents.pop();
-        parent.node->rect = getBoundingRect(parent.node->regions);
+        temp = p.node;
     }
 
     // Si no hay huerfanos, return.
