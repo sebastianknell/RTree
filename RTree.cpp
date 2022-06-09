@@ -83,7 +83,17 @@ static Rect getBoundingRect(const vector<Rect> &regions) {
 
 RTree::RTree(int order): order(order), root(nullptr) {}
 
-Node::Node(bool isLeaf): isLeaf(isLeaf) {}
+RTree::~RTree() {
+    delete root;
+}
+
+Node::Node(bool isLeaf): isLeaf(isLeaf), rect({0, 0, 0, 0}) {}
+
+Node::~Node() {
+    for (auto &c : childs) {
+        delete c;
+    }
+}
 
 static pair<int,int> pickSeeds(const vector<Rect> &regions) {
     // Escoger primeras 2 regiones
@@ -114,9 +124,19 @@ static pair<int,int> pickSeeds(const vector<Rect> &regions) {
     x_dif /= (x_max - x_min);
     y_dif /= (y_max - y_min);
     // Escoger la mayor
+    random_device dev;
+    mt19937 rng(dev());
+    uniform_int_distribution<std::mt19937::result_type> dist(0,regions.size()-1);
     if (x_dif >= y_dif) {
+        while (lowRegion_x == highRegion_x) {
+            highRegion_x = dist(rng);
+        }
         return {lowRegion_x, highRegion_x};
+
     } else {
+        while (lowRegion_y == highRegion_y) {
+            highRegion_y = dist(rng);
+        }
         return {lowRegion_y, highRegion_y};
     }
 }
@@ -306,7 +326,9 @@ void RTree::reinsert(){
     vector<Data*> toReinsert;
 
     dfs(toReinsert, root);
-    this->root = new Node(true);
+    delete root;
+    root = nullptr;
+//    this->root = new Node(true);
 
     for(auto dat : toReinsert){
         insert(*dat);
