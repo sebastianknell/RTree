@@ -10,6 +10,7 @@
 #include <stack>
 #include <algorithm>
 #include <cmath>
+#include <random>
 #include <opencv2/opencv.hpp>
 
 using namespace std;
@@ -39,16 +40,19 @@ struct Node {
     bool isLeaf;
     vector<Data*> data; // valido si es hoja
     explicit Node(bool);
+    ~Node();
 };
 
 class RTree {
     Node* root;
     int order;
     Node* splitNode(Node*) const;
+    void reinsert();
 public:
     RTree(int order = 3);
+    ~RTree();
     void insert(Data);
-    void remove(Data);
+    void remove(const Data&);
     void show(cv::InputOutputArray&);
     Point search(Rect);
 };
