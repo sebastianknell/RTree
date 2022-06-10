@@ -362,6 +362,9 @@ void RTree::remove(const Data& data) {
                     if (isInRect(data.front(), curr->regions[i])) found = true;
                 }
             }
+            else if(curr->data[i]->size() > 1 && data.size() == 1){
+                if(isInRect(data.front(), curr->regions[i])) found = true;
+            }
             else if (*curr->data[i] == data) {
                 found = true;
             }
@@ -394,6 +397,9 @@ void RTree::remove(const Data& data) {
                     else {
                         if (isInRect(data.front(), curr->regions[i])) found = true;
                     }
+                }
+                else if(curr->data[i]->size() > 1 && data.size() == 1){
+                    if(isInRect(data.front(), curr->regions[i])) found = true;
                 }
                 else if (*curr->data[i] == data) {
                     found = true;
