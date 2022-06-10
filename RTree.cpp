@@ -286,6 +286,7 @@ void RTree::insert(const Data data) {
                 curr2 = splitNode(parent);
                 if (parent == root) rootSplit = true;
             }
+            else curr = nullptr;
         }
         curr = parent;
     } while (!parents.empty());
@@ -399,6 +400,12 @@ void RTree::remove(const Data &data) {
     }
 
     // Re insert all entries
+    assert(curr == root);
+    if (curr->regions.size() == 1) {
+        root = curr->childs.front();
+        curr->childs.clear();
+        delete curr;
+    }
 
     while(!toReinsert.empty()){
         auto node = toReinsert.front();
@@ -418,11 +425,11 @@ void RTree::remove(const Data &data) {
     }
 
     // Ajustar root
-    if (root->childs.size() == 1) {
-        auto temp = root;
-        root = root->childs.front();
-        delete temp;
-    }
+//    if (root->childs.size() == 1) {
+//        auto temp = root;
+//        root = root->childs.front();
+//        delete temp;
+//    }
 }
 
 int colorIdx = 0;
