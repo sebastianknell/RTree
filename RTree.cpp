@@ -286,6 +286,7 @@ void RTree::insert(const Data data) {
                 curr2 = splitNode(parent);
                 if (parent == root) rootSplit = true;
             }
+            else curr2 = nullptr;
         }
         curr = parent;
     } while (!parents.empty());
@@ -351,9 +352,14 @@ void RTree::remove(const Data& data) {
     }
     else {
         for (int i = 0; i < curr->regions.size(); i++) {
-            if (curr->data[i]->size() == 1 && data.size() == 1) {
-                if (isInCircle(data.front(), curr->data[i]->front(), radius)) {
-                    found = true;
+            if (data.size() == 1) {
+                if (curr->data[i]->size() == 1) {
+                    if (isInCircle(data.front(), curr->data[i]->front(), radius)) {
+                        found = true;
+                    }
+                }
+                else {
+                    if (isInRect(data.front(), curr->regions[i])) found = true;
                 }
             }
             else if (*curr->data[i] == data) {
@@ -379,9 +385,14 @@ void RTree::remove(const Data& data) {
         }
         else {
             for (int i = 0; i < curr->regions.size(); i++) {
-                if (curr->data[i]->size() == 1 && data.size() == 1) {
-                    if (isInCircle(data.front(), curr->data[i]->front(), radius)) {
-                        found = true;
+                if (data.size() == 1) {
+                    if (curr->data[i]->size() == 1) {
+                        if (isInCircle(data.front(), curr->data[i]->front(), radius)) {
+                            found = true;
+                        }
+                    }
+                    else {
+                        if (isInRect(data.front(), curr->regions[i])) found = true;
                     }
                 }
                 else if (*curr->data[i] == data) {
