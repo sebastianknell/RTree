@@ -43,6 +43,8 @@ struct Node {
     ~Node();
 };
 
+using pos = struct {Node* node; int index;};
+
 class RTree {
     Node* root;
     int order;
@@ -53,8 +55,9 @@ public:
     ~RTree();
     void insert(Data);
     void remove(const Data&);
+    vector<pos> knn(Point, int);
+    vector<pos> depthFirst(Point, int);
     void show(cv::InputOutputArray&);
-    Point search(Rect);
 };
 
 

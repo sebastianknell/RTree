@@ -15,9 +15,12 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
         if (!drawing) {
             if (flags == (cv::EVENT_FLAG_ALTKEY + cv::EVENT_FLAG_LBUTTON)) {
                 cout << x << ", " << y << endl;
-                rtree.insert({{x, y}});
+//                rtree.insert({{x, y}});
                 img.setTo(cv::Scalar(255, 255, 255));
                 rtree.show(img);
+                auto nns = rtree.depthFirst({x, y}, 2);
+                for (auto nn : nns)
+                    cv::circle(img, nn.node->data[nn.index]->back(), radius, colors[0], -1);
             }
             else {
                 drawing = true;
@@ -65,7 +68,6 @@ int main() {
     cv::imshow(windowName, img);
     cv::waitKey(1);
 
-//    cv::setWindowProperty(windowName, cv::WND_PROP_TOPMOST, 1);
     cv::setMouseCallback(windowName, clickHandler);
 
     char c;

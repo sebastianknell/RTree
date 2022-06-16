@@ -26,6 +26,12 @@ static int getPerimeterEnlargement(Rect region, Rect r) {
     return ((x_high - x_low) + (y_high - y_low)) - ((region.x_high - region.x_low) + (region.y_high - region.y_low));
 }
 
+static double getDistance(Point p, Rect rect) {
+    auto x_dif = min(abs(p.x - rect.x_low), abs(p.x - rect.x_high));
+    auto y_dif = min(abs(p.y - rect.y_low), abs(p.y - rect.y_high));
+    return sqrt(pow(x_dif, 2) + pow(y_dif, 2));
+}
+
 static int getBestRegion(Node* node, Rect r) {
     auto best = getPerimeterEnlargement(node->regions.front(), r);
     auto bestIndex = 0;
@@ -338,7 +344,6 @@ void RTree::reinsert(){
 
 void RTree::remove(const Data& data) {
     auto bb = getBoundingBox(data);
-    using pos = struct {Node* node; int index;};
     stack<pos> parents;
     auto curr = root;
     bool found = false;
@@ -444,6 +449,67 @@ void RTree::remove(const Data& data) {
 
     // Reinsertar data huerfana
     reinsert();
+}
+
+vector<pos> RTree::knn(Point p, int k) {
+    using distance = struct {Node* node; int index; double distance;};
+    auto cmp = [](distance a, distance b) {
+        return a.distance < b.distance;
+    };
+    priority_queue<distance, vector<distance>, decltype(cmp)> nodes(cmp);
+    vector<pos> knn;
+    auto curr = root;
+    nodes.push({curr, 0, getDistance(p, curr->rect)});
+    while (!curr->isLeaf && !nodes.empty()) {
+        curr = nodes.top().node;
+        nodes.pop();
+        for (int i = 0; i < curr->childs.size(); i++)
+            nodes.push({curr->childs[i], i, getDistance(p, curr->regions[i])});
+
+    }
+
+
+    return knn;
+}
+
+vector<pos> RTree::depthFirst(Point p, int k) {
+    using distance = struct {Node* node; int index; double distance;};
+    auto cmp = [](distance a, distance b) {
+        return a.distance < b.distance;
+    };
+    priority_queue<distance, vector<distance>, decltype(cmp)> nodes(cmp);
+    int maxSize = 4;
+    double dmax = INT_MAX;
+    stack<Node*> stack;
+    stack.push(root);
+    while (!stack.empty()) {
+        auto curr = stack.top();
+        stack.pop();
+        if (!curr->isLeaf) {
+            for (auto &c : curr->childs) {
+                stack.push(c);
+            }
+        }
+        else {
+            for (int i = 0; i < curr->regions.size(); i ++) {
+                auto distance = getDistance(p, curr->regions[i]);
+                if (distance < dmax) {
+                    dmax = distance;
+                    if (nodes.size() == maxSize) nodes.pop();
+                    nodes.push({curr, i, distance});
+                }
+            }
+        }
+    }
+    vector<pos> result;
+    while (!nodes.empty()) {
+        if (nodes.size() == k) {
+            result.push_back({nodes.top().node, nodes.top().index});
+            k--;
+        }
+        nodes.pop();
+    }
+    return result;
 }
 
 int colorIdx = 0;
