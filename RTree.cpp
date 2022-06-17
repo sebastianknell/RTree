@@ -478,7 +478,6 @@ vector<pos> RTree::depthFirst(Point p, int k) {
         return a.distance < b.distance;
     };
     priority_queue<distance, vector<distance>, decltype(cmp)> nodes(cmp);
-    int maxSize = 4;
     double dmax = INT_MAX;
     stack<Node*> stack;
     stack.push(root);
@@ -493,20 +492,17 @@ vector<pos> RTree::depthFirst(Point p, int k) {
         else {
             for (int i = 0; i < curr->regions.size(); i ++) {
                 auto distance = getDistance(p, curr->regions[i]);
-                if (distance < dmax) {
-                    dmax = distance;
-                    if (nodes.size() == maxSize) nodes.pop();
+                if (distance < dmax || nodes.size() < k) {
+                    if (nodes.size() == k) nodes.pop();
                     nodes.push({curr, i, distance});
+                    dmax = nodes.top().distance;
                 }
             }
         }
     }
     vector<pos> result;
     while (!nodes.empty()) {
-        if (nodes.size() == k) {
-            result.push_back({nodes.top().node, nodes.top().index});
-            k--;
-        }
+        result.push_back({nodes.top().node, nodes.top().index});
         nodes.pop();
     }
     return result;

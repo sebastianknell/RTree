@@ -15,12 +15,9 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
         if (!drawing) {
             if (flags == (cv::EVENT_FLAG_ALTKEY + cv::EVENT_FLAG_LBUTTON)) {
                 cout << x << ", " << y << endl;
-//                rtree.insert({{x, y}});
+                rtree.insert({{x, y}});
                 img.setTo(cv::Scalar(255, 255, 255));
                 rtree.show(img);
-                auto nns = rtree.depthFirst({x, y}, 2);
-                for (auto nn : nns)
-                    cv::circle(img, nn.node->data[nn.index]->back(), radius, colors[0], -1);
             }
             else {
                 drawing = true;
@@ -50,6 +47,18 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
         img.setTo(cv::Scalar(255, 255, 255));
         rtree.show(img);
         cv::imshow(windowName, img);
+    }
+    else if (event == cv::EVENT_MOUSEMOVE) {
+        if (!drawing) {
+            img.setTo(cv::Scalar(255, 255, 255));
+            rtree.show(img);
+            auto nns = rtree.depthFirst({x, y}, 2);
+            for (auto nn : nns)
+                if (nn.node->data[nn.index]->size() == 1)
+                    cv::circle(img, nn.node->data[nn.index]->back(), radius, colors[0], -1);
+                else cv::polylines(img, *nn.node->data[nn.index], true, colors[0], 2);
+            cv::imshow(windowName, img);
+        }
     }
 }
 
