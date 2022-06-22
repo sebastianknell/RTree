@@ -497,8 +497,8 @@ vector<pos> RTree::depthFirst(Point p, int k) {
         }
         else {
             for (int i = 0; i < curr->regions.size(); i ++) {
+                if (dmax + getDistance(curr->data[i]->front(), curr->circle.center) < getDistance(p, curr->circle.center)) continue;
                 if (dmax + getDistance(p, curr->circle.center) < getDistance(curr->data[i]->front(), curr->circle.center)) continue;
-                
                 auto distance = getDistance(p, curr->regions[i]);
                 if (distance < dmax || nodes.size() < k) {
                     if (nodes.size() == k) nodes.pop();
