@@ -17,6 +17,7 @@ using namespace std;
 
 using Point = cv::Point;
 using Rect = struct {int x_low; int y_low; int x_high; int y_high;};
+using Circle = struct {Point center; int radius;};
 using Data = vector<cv::Point>;
 
 extern int radius;
@@ -35,6 +36,7 @@ static cv::Scalar colors[] = {
 struct Node {
     // TODO ver si combiene usar List
     Rect rect;
+    Circle circle;
     vector<Rect> regions; // regiones o bounding boxes si es hoja
     vector<Node*> childs;
     bool isLeaf;
@@ -57,6 +59,7 @@ public:
     void remove(const Data&);
     vector<pos> knn(Point, int);
     vector<pos> depthFirst(Point, int);
+    void useCircles();
     void show(cv::InputOutputArray&);
 };
 

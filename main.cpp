@@ -73,6 +73,7 @@ int main() {
     rtree.insert({{324, 164}});
     rtree.insert({{671, 254}});
     rtree.insert({{200, 435}});
+    rtree.useCircles();
     rtree.show(img);
     cv::imshow(windowName, img);
     cv::waitKey(1);

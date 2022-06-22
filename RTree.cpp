@@ -32,6 +32,10 @@ static double getDistance(Point p, Rect rect) {
     return sqrt(pow(x_dif, 2) + pow(y_dif, 2));
 }
 
+static double getDistance(Point a, Point b) {
+    return getDistance(a, {b.x, b.y, b.x, b.y});
+}
+
 static int getBestRegion(Node* node, Rect r) {
     auto best = getPerimeterEnlargement(node->regions.front(), r);
     auto bestIndex = 0;
@@ -508,6 +512,51 @@ vector<pos> RTree::depthFirst(Point p, int k) {
     return result;
 }
 
+static void useCirclesRec(Node* node) {
+    // Solo funciona con puntos
+    if (node->isLeaf) {
+        // Calcular el centroide a partir de los puntos
+        int cx = 0, cy = 0;
+        int A = 0;
+        for (auto &d : node->data) {
+            cx += d->front().x * radius;
+            cy += d->front().y * radius;
+            A += radius;
+        }
+        Point centroid = {cx/A, cy/A};
+        double maxD = 0;
+        for (auto &d : node->data) {
+            auto distance = getDistance(centroid, d->front());
+            if (distance > maxD) maxD = distance;
+        }
+        node->circle = {centroid, (int)maxD};
+    }
+    else {
+        for (auto &c : node->childs) {
+            useCirclesRec(c);
+        }
+        // Calcular el centroide a partir de los circulos hijos
+        int cx = 0, cy = 0;
+        int A = 0;
+        for (auto &c : node->childs) {
+            cx += c->circle.center.x * pow(c->circle.radius, 2);
+            cy += c->circle.center.y * pow(c->circle.radius, 2);
+            A += pow(c->circle.radius, 2);
+        }
+        Point centroid = {cx/A, cy/A};
+        double maxD = 0;
+        for (auto &c : node->childs) {
+            auto distance = getDistance(centroid, c->circle.center) + c->circle.radius;
+            if (distance > maxD) maxD = distance;
+        }
+        node->circle = {centroid, (int)maxD};
+    }
+}
+
+void RTree::useCircles() {
+    useCirclesRec(root);
+}
+
 int colorIdx = 0;
 
 static void showNode(Node* node, cv::InputOutputArray &img) {
@@ -530,6 +579,7 @@ static void showNode(Node* node, cv::InputOutputArray &img) {
             cv::rectangle(img, {r.x_low, r.y_low}, {r.x_high-1, r.y_high-1}, colors[colorIdx%6], 2);
         }
         for (const auto &c : node->childs) {
+            cv::circle(img, c->circle.center, c->circle.radius, colors[colorIdx%6], 2);
             showNode(c, img);
         }
     }
