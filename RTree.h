@@ -37,6 +37,7 @@ struct Node {
     // TODO ver si combiene usar List
     Rect rect;
     Circle circle;
+    int minRadius;
     vector<Rect> regions; // regiones o bounding boxes si es hoja
     vector<Node*> childs;
     bool isLeaf;

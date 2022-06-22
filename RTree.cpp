@@ -490,11 +490,15 @@ vector<pos> RTree::depthFirst(Point p, int k) {
         stack.pop();
         if (!curr->isLeaf) {
             for (auto &c : curr->childs) {
+                if (dmax + c->circle.radius < getDistance(p, c->circle.center)) continue;
+                if (dmax + getDistance(p, c->circle.center) < c->minRadius) continue;
                 stack.push(c);
             }
         }
         else {
             for (int i = 0; i < curr->regions.size(); i ++) {
+                if (dmax + getDistance(p, curr->circle.center) < getDistance(curr->data[i]->front(), curr->circle.center)) continue;
+                
                 auto distance = getDistance(p, curr->regions[i]);
                 if (distance < dmax || nodes.size() < k) {
                     if (nodes.size() == k) nodes.pop();
@@ -525,11 +529,14 @@ static void useCirclesRec(Node* node) {
         }
         Point centroid = {cx/A, cy/A};
         double maxD = 0;
+        double minD = INT_MAX;
         for (auto &d : node->data) {
             auto distance = getDistance(centroid, d->front());
             if (distance > maxD) maxD = distance;
+            if (distance < minD) minD = distance;
         }
         node->circle = {centroid, (int)maxD};
+        node->minRadius = minD;
     }
     else {
         for (auto &c : node->childs) {
@@ -545,11 +552,14 @@ static void useCirclesRec(Node* node) {
         }
         Point centroid = {cx/A, cy/A};
         double maxD = 0;
+        double minD = INT_MAX;
         for (auto &c : node->childs) {
             auto distance = getDistance(centroid, c->circle.center) + c->circle.radius;
             if (distance > maxD) maxD = distance;
+            if (distance < minD) minD = distance;
         }
         node->circle = {centroid, (int)maxD};
+        node->minRadius = minD;
     }
 }
 
