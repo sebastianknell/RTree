@@ -497,8 +497,10 @@ vector<pos> RTree::depthFirst(Point p, int k) {
         }
         else {
             for (int i = 0; i < curr->regions.size(); i ++) {
-                if (dmax + getDistance(curr->data[i]->front(), curr->circle.center) < getDistance(p, curr->circle.center)) continue;
-                if (dmax + getDistance(p, curr->circle.center) < getDistance(curr->data[i]->front(), curr->circle.center)) continue;
+                auto distancePtoMp = getDistance(p, curr->circle.center);
+                if (dmax + getDistance(curr->data[i]->front(), curr->circle.center) < distancePtoMp) continue;
+                if (dmax + distancePtoMp < getDistance(curr->data[i]->front(), curr->circle.center)) continue;
+                if (k == 1 && distancePtoMp + curr->minRadius < dmax) dmax = distancePtoMp + curr->minRadius;
                 auto distance = getDistance(p, curr->regions[i]);
                 if (distance < dmax || nodes.size() < k) {
                     if (nodes.size() == k) nodes.pop();
@@ -589,7 +591,7 @@ static void showNode(Node* node, cv::InputOutputArray &img) {
             cv::rectangle(img, {r.x_low, r.y_low}, {r.x_high-1, r.y_high-1}, colors[colorIdx%6], 2);
         }
         for (const auto &c : node->childs) {
-            cv::circle(img, c->circle.center, c->circle.radius, colors[colorIdx%6], 2);
+//            cv::circle(img, c->circle.center, c->circle.radius, colors[colorIdx%6], 2);
             showNode(c, img);
         }
     }
