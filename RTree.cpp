@@ -18,6 +18,10 @@ static bool operator==(const Rect &a, const Rect &b) {
     return a.x_low == b.x_low && a.x_high == b.x_high && a.y_low == b.y_low && a.y_high == b.y_high;
 }
 
+static Point operator-(const Point &a, const Point &b) {
+    return {a.x - b.x, a.y - b.y};
+}
+
 static int getPerimeterEnlargement(Rect region, Rect r) {
     auto x_low = min(region.x_low, r.x_low);
     auto y_low = min(region.y_low, r.y_low);
@@ -30,6 +34,46 @@ static double getDistance(Point p, Rect rect) {
     auto x_dif = min(abs(p.x - rect.x_low), abs(p.x - rect.x_high));
     auto y_dif = min(abs(p.y - rect.y_low), abs(p.y - rect.y_high));
     return sqrt(pow(x_dif, 2) + pow(y_dif, 2));
+}
+
+static double getDistance(Point a, Point b) {
+    return getDistance(a, {b.x, b.y, b.x, b.y});
+}
+
+static lineTo getDistanceToSegment(Point p, Point a, Point b) {
+    auto dot = [](Point a, Point b) -> double {
+        return a.x * b.x + a.y * b.y;
+    };
+    auto norm = [](Point p) -> double {
+        return sqrt(pow(p.x, 2) + pow(p.y, 2));
+    };
+    auto ab = b - a;
+    auto bp = p - b;
+    auto ap = p - a;
+
+    if (dot(ab, ap) < 0) {
+        return {a, norm(ap)};
+    }
+    if (dot(ab, bp) > 0) {
+        return {b, norm(bp)};
+    }
+    else {
+        auto d = abs(ab.x * ap.y - ab.y * ap.x) / norm(ab);
+        auto t = dot(ap, ab) / dot(ab, ab);
+        Point point = {int(a.x + ab.x*t), int(a.y + ab.y*t)};
+        return {point, d};
+    }
+}
+
+static lineTo getDistance(Point p, Data *data) {
+    if (data->size() == 1) return {data->front(), getDistance(p, data->front())};
+    data->push_back(data->front());
+    lineTo min = {{}, INT_MAX};
+    for (int i = 0; i < data->size() - 1; i++) {
+        auto distanceToSide = getDistanceToSegment(p, data->at(i), data->at(i+1));
+        if (distanceToSide.distance < min.distance) min = distanceToSide;
+    }
+    return min;
 }
 
 static int getBestRegion(Node* node, Rect r) {
@@ -451,29 +495,39 @@ void RTree::remove(const Data& data) {
     reinsert();
 }
 
-vector<pos> RTree::knn(Point p, int k) {
-    using distance = struct {Node* node; int index; double distance;};
+vector<knnResult> RTree::knn(Point p, int k) {
+    using distance = struct {Node* node; int index; double distance; Point p;};
     auto cmp = [](distance a, distance b) {
-        return a.distance < b.distance;
+        return a.distance > b.distance;
     };
     priority_queue<distance, vector<distance>, decltype(cmp)> nodes(cmp);
-    vector<pos> knn;
-    auto curr = root;
-    nodes.push({curr, 0, getDistance(p, curr->rect)});
-    while (!curr->isLeaf && !nodes.empty()) {
-        curr = nodes.top().node;
+    vector<knnResult> knn;
+    for (int i = 0; i < root->regions.size(); i++)
+        nodes.push({root, i, getDistance(p, root->regions[i])});
+
+    while (!nodes.empty() && knn.size() < k) {
+        auto curr = nodes.top();
         nodes.pop();
-        for (int i = 0; i < curr->childs.size(); i++)
-            nodes.push({curr->childs[i], i, getDistance(p, curr->regions[i])});
-
+        if (!curr.node->isLeaf) {
+            auto child = curr.node->childs[curr.index];
+            for (int i = 0; i < child->regions.size(); i++) {
+                if (!child->isLeaf)
+                    nodes.push({child, i, getDistance(p, child->regions[i])});
+                else {
+                    auto line = getDistance(p, child->data[i]);
+                    nodes.push({child, i, line.distance, line.p});
+                }
+            }
+        }
+        else {
+            knn.push_back({curr.node, curr.index, curr.p});
+        }
     }
-
-
     return knn;
 }
 
-vector<pos> RTree::depthFirst(Point p, int k) {
-    using distance = struct {Node* node; int index; double distance;};
+vector<knnResult> RTree::depthFirst(Point p, int k) {
+    using distance = struct {Node* node; int index; double distance; Point p;};
     auto cmp = [](distance a, distance b) {
         return a.distance < b.distance;
     };
@@ -486,26 +540,84 @@ vector<pos> RTree::depthFirst(Point p, int k) {
         stack.pop();
         if (!curr->isLeaf) {
             for (auto &c : curr->childs) {
+                if (dmax + c->circle.radius < getDistance(p, c->circle.center)) continue;
+                if (dmax + getDistance(p, c->circle.center) < c->minRadius) continue;
                 stack.push(c);
             }
         }
         else {
             for (int i = 0; i < curr->regions.size(); i ++) {
-                auto distance = getDistance(p, curr->regions[i]);
-                if (distance < dmax || nodes.size() < k) {
+                auto distancePtoMp = getDistance(p, curr->circle.center);
+                if (dmax + getDistance(curr->circle.center, curr->data[i]).distance < distancePtoMp) continue;
+                if (dmax + distancePtoMp < getDistance(curr->circle.center, curr->data[i]).distance) continue;
+                if (k == 1 && distancePtoMp + curr->minRadius < dmax) dmax = distancePtoMp + curr->minRadius;
+
+                auto line = getDistance(p, curr->data[i]);
+                if (line.distance < dmax || nodes.size() < k) {
                     if (nodes.size() == k) nodes.pop();
-                    nodes.push({curr, i, distance});
+                    nodes.push({curr, i, line.distance, line.p});
                     dmax = nodes.top().distance;
                 }
             }
         }
     }
-    vector<pos> result;
+    vector<knnResult> result;
     while (!nodes.empty()) {
-        result.push_back({nodes.top().node, nodes.top().index});
+        result.push_back({nodes.top().node, nodes.top().index, nodes.top().p});
         nodes.pop();
     }
     return result;
+}
+
+static void useCirclesRec(Node* node) {
+    // Solo funciona con puntos
+    if (node->isLeaf) {
+        // Calcular el centroide a partir de los puntos
+        int cx = 0, cy = 0;
+        int A = 0;
+        for (auto &d : node->data) {
+            cx += d->front().x * radius;
+            cy += d->front().y * radius;
+            A += radius;
+        }
+        Point centroid = {cx/A, cy/A};
+        double maxD = 0;
+        double minD = INT_MAX;
+        for (auto &d : node->data) {
+            auto distance = getDistance(centroid, d->front());
+            if (distance > maxD) maxD = distance;
+            if (distance < minD) minD = distance;
+        }
+        node->circle = {centroid, (int)maxD};
+        node->minRadius = minD;
+    }
+    else {
+        for (auto &c : node->childs) {
+            useCirclesRec(c);
+        }
+        // Calcular el centroide a partir de los circulos hijos
+        int cx = 0, cy = 0;
+        int A = 0;
+        for (auto &c : node->childs) {
+            cx += c->circle.center.x * pow(c->circle.radius, 2);
+            cy += c->circle.center.y * pow(c->circle.radius, 2);
+            A += pow(c->circle.radius, 2);
+        }
+        Point centroid = {cx/A, cy/A};
+        double maxD = 0;
+        double minD = INT_MAX;
+        for (auto &c : node->childs) {
+            auto distance = getDistance(centroid, c->circle.center) + c->circle.radius;
+            if (distance > maxD) maxD = distance;
+            if (distance < minD) minD = distance;
+        }
+        node->circle = {centroid, (int)maxD};
+        node->minRadius = minD;
+    }
+}
+
+void RTree::useCircles() {
+    useCirclesRec(root);
 }
 
 int colorIdx = 0;
@@ -520,7 +632,7 @@ static void showNode(Node* node, cv::InputOutputArray &img) {
                 cv::circle(img, node->data[i]->back(), radius, colors[3], -1);
             }
             else {
-                cv::rectangle(img, {node->regions[i].x_low, node->regions[i].y_low}, {node->regions[i].x_high-1, node->regions[i].y_high-1}, colors[3], 2);
+                cv::rectangle(img, {node->regions[i].x_low, node->regions[i].y_low}, {node->regions[i].x_high-1, node->regions[i].y_high-1}, {0,0,0}, 1);
                 cv::polylines(img, *node->data[i], true, colors[3], 2);
             }
         }
@@ -530,6 +642,7 @@ static void showNode(Node* node, cv::InputOutputArray &img) {
             cv::rectangle(img, {r.x_low, r.y_low}, {r.x_high-1, r.y_high-1}, colors[colorIdx%6], 2);
         }
         for (const auto &c : node->childs) {
+//            cv::circle(img, c->circle.center, c->circle.radius, colors[colorIdx%6], 2);
             showNode(c, img);
         }
     }
