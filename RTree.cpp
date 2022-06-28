@@ -503,7 +503,12 @@ vector<knnResult> RTree::knn(Point p, int k) {
     priority_queue<distance, vector<distance>, decltype(cmp)> nodes(cmp);
     vector<knnResult> knn;
     for (int i = 0; i < root->regions.size(); i++)
-        nodes.push({root, i, getDistance(p, root->regions[i])});
+        if (!root->isLeaf)
+            nodes.push({root, i, getDistance(p, root->regions[i])});
+        else {
+            auto line = getDistance(p, root->data[i]);
+            nodes.push({root, i, line.distance, line.p});
+        }
 
     while (!nodes.empty() && knn.size() < k) {
         auto curr = nodes.top();
