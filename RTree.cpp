@@ -74,7 +74,7 @@ RTree::~RTree() {
     delete root;
 }
 
-Node::Node(bool isLeaf): isLeaf(isLeaf), rect({0, 0, 0, 0}) {}
+Node::Node(bool isLeaf, int level): isLeaf(isLeaf), level(level), rect({0, 0, 0, 0}) {}
 
 Node::~Node() {
     for (auto &c : childs) {
@@ -143,7 +143,7 @@ Node* RTree::splitNode(Node* node) const {
     // TODO refactor y optimizar
     auto seeds = pickSeeds(node->regions);
     assert(seeds.first != seeds.second);
-    auto group1 = new Node(node->isLeaf), group2 = new Node(node->isLeaf);
+    auto group1 = new Node(node->isLeaf, node->level), group2 = new Node(node->isLeaf, node->level);
     addRegion(group1, node->regions[seeds.first]);
     addRegion(group2, node->regions[seeds.second]);
 
@@ -232,7 +232,7 @@ void RTree::insert(const Data &data) {
     // Calcular bounding box
     Rect bb = getBoundingBox(data);
     if (!root) {
-        root = new Node(true);
+        root = new Node(true, 0);
         addRegion(root, bb);
         root->data.push_back(new Data(data));
         return;
@@ -280,7 +280,7 @@ void RTree::insert(const Data &data) {
     // Cambiar al root si se hizo un split
     if (rootSplit) {
         assert(curr2 != nullptr);
-        root = new Node(false);
+        root = new Node(false, curr->level + 1);
         addRegion(root, curr->rect);
         addRegion(root, curr2->rect);
         root->childs.push_back(curr);
@@ -320,6 +320,30 @@ void RTree::reinsert(){
 
     for(auto dat : toReinsert){
         insert(*dat);
+    }
+}
+
+void RTree::reinsert2(queue<Node*> &nodes) {
+    while(!nodes.empty()) {
+        auto curr = nodes.front();
+        nodes.pop();
+        if (curr->isLeaf) {
+            for (auto &d : curr->data) insert(*d);
+        }
+        else {
+            auto curr2 = curr;
+            stack<pos> parents;
+            while (curr2->level > curr->level) {
+                auto regionIndex = getBestRegion(curr2, curr->rect);
+//                parents.push({curr, &curr->regions[regionIndex]});
+                curr = curr->childs[regionIndex];
+            }
+            // ya estamos en el nivel correcto
+            for (auto &region : curr->regions) curr->regions.push_back(region);
+            for (auto &child : curr->childs) curr->childs.push_back(child);
+            if (curr->regions.size() <= order) continue;
+
+        }
     }
 }
 

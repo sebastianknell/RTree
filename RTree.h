@@ -22,11 +22,12 @@ struct Node {
     Rect rect;
     Circle circle;
     int minRadius;
+    int level;
     vector<Rect> regions; // regiones o bounding boxes si es hoja
     vector<Node*> childs;
     bool isLeaf;
     vector<Data*> data; // valido si es hoja
-    explicit Node(bool);
+    explicit Node(bool, int);
     ~Node();
 };
 
@@ -39,6 +40,7 @@ class RTree {
     int order;
     Node* splitNode(Node*) const;
     void reinsert();
+    void reinsert2(queue<Node*>&);
 public:
     RTree(int order = 3);
     ~RTree();
