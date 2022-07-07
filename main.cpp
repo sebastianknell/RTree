@@ -52,8 +52,8 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
         if (!drawing && !rtree.isEmpty()) {
             img.setTo(cv::Scalar(255, 255, 255));
             rtree.show(img);
-            auto nns = rtree.depthFirst({x, y}, 2);
-//            auto nns = rtree.knn({x, y}, 2);
+//            auto nns = rtree.depthFirst({x, y}, 2);
+            auto nns = rtree.knn({x, y}, 2);
             for (auto nn : nns) {
                 cv::line(img, {x, y}, nn.p, {0, 0, 0}, 1);
                 if (nn.node->data[nn.index]->size() == 1)
@@ -66,18 +66,18 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
 }
 
 int main() {
-    rtree.insert({{184, 76}});
-    rtree.insert({{776, 138}});
-    rtree.insert({{582, 354}});
-    rtree.insert({{228, 229}});
-    rtree.insert({{281, 316}});
-    rtree.insert({{177, 370}});
-    rtree.insert({{100, 269}});
-    rtree.insert({{324, 164}});
-    rtree.insert({{671, 254}});
-    rtree.insert({{200, 435}});
-    rtree.useCircles();
-    rtree.show(img);
+//    rtree.insert({{184, 76}});
+//    rtree.insert({{776, 138}});
+//    rtree.insert({{582, 354}});
+//    rtree.insert({{228, 229}});
+//    rtree.insert({{281, 316}});
+//    rtree.insert({{177, 370}});
+//    rtree.insert({{100, 269}});
+//    rtree.insert({{324, 164}});
+//    rtree.insert({{671, 254}});
+//    rtree.insert({{200, 435}});
+//    rtree.useCircles();
+//    rtree.show(img);
     cv::imshow(windowName, img);
     cv::waitKey(1);
 

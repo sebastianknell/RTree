@@ -12,29 +12,13 @@
 #include <cmath>
 #include <random>
 #include <opencv2/opencv.hpp>
+#include "utils.h"
 
 using namespace std;
 
-using Point = cv::Point;
-using Rect = struct {int x_low; int y_low; int x_high; int y_high;};
 using Circle = struct {Point center; int radius;};
-using Data = vector<cv::Point>;
-
-extern int radius;
-extern bool isInCircle(Point p, Point circleP, int radius);
-extern Rect getSearchRectangle(const Point&, int);
-
-static cv::Scalar colors[] = {
-        {106, 100, 208},
-        {233, 145, 198},
-        {255, 221, 137},
-        {255, 170, 130},
-        {141, 232, 195},
-        {107, 203, 255}
-};
 
 struct Node {
-    // TODO ver si combiene usar List
     Rect rect;
     Circle circle;
     int minRadius;
@@ -59,7 +43,7 @@ public:
     RTree(int order = 3);
     ~RTree();
     bool isEmpty() { return root == nullptr; };
-    void insert(Data);
+    void insert(const Data&);
     void remove(const Data&);
     vector<knnResult> knn(Point, int);
     vector<knnResult> depthFirst(Point, int);

@@ -7,28 +7,32 @@
 
 #include <iostream>
 #include <vector>
+#include <opencv2/opencv.hpp>
+#include "utils.h"
 
 using namespace std;
 
-using Point = struct {int x, y;};
-using Rect = struct {int xlow, ylow, xhigh, yhigh;};
-using Data = vector<Point>;
+using HData = struct {Data* data; int hIndex;};
 
 struct Node {
     bool isLeaf;
-    Node* prev;
+    Node* prev; // se necesita para pedir del hermano?
     int lhv;
+    Rect rect;
     vector<Rect> regions;
     vector<Node*> childs;
-    vector<Data*> data;
+    vector<HData> data;
+    explicit Node(bool isLeaf): isLeaf(isLeaf), lhv(0) {}
 };
 
 class HilbertRtree {
+    int gridWidth, gridHeight, levels, order;
     Node* root;
+    int getHilbertIndex(Point);
 public:
-    static int getHilbertIndex(Point, int x, int y, int xi, int xj, int yi, int yj, int n, int index);
-    void insert(Data);
-    void remove(Data);
+    HilbertRtree(int order = 3): order(order), root(nullptr) {}
+    void insert(Data&);
+    void remove(Data&);
 };
 
 
