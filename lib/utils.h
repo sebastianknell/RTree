@@ -16,6 +16,13 @@ using Point = cv::Point;
 using Rect = struct {int x_low; int y_low; int x_high; int y_high;};
 using Data = vector<Point>;
 
+class Tree {
+public:
+    virtual void search(const Data&) = 0;
+    virtual void insert(const Data&) = 0;
+    virtual void remove(const Data&) = 0;
+};
+
 extern int radius;
 extern cv::Scalar colors[];
 bool isInCircle(Point p, Point circleP, int r);

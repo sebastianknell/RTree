@@ -624,11 +624,12 @@ void RTree::useCircles() {
     useCirclesRec(root);
 }
 
-int colorIdx = 0;
+void RTree::search(const Data &data) {
+
+}
 
 static void showNode(Node* node, cv::InputOutputArray &img) {
     if (node == nullptr) return;
-    colorIdx++;
     if (node->isLeaf) {
         for (int i = 0; i < node->regions.size(); i++) {
             if (node->data[i]->size() == 1) {
@@ -652,6 +653,5 @@ static void showNode(Node* node, cv::InputOutputArray &img) {
 }
 
 void RTree::show(cv::InputOutputArray &img) {
-    colorIdx = 0;
     showNode(root, img);
 }
