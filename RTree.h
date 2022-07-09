@@ -32,6 +32,7 @@ struct Node {
 };
 
 using pos = struct {Node* node; int index;};
+using pos2 = struct {Node* node; Rect* region;};
 using lineTo = struct {Point p; double distance;};
 using knnResult = struct {Node* node; int index; Point p;};
 
@@ -39,6 +40,7 @@ class RTree {
     Node* root;
     int order;
     Node* splitNode(Node*) const;
+    void adjustTree(Node*, stack<pos2>&);
     void reinsert();
     void reinsert2(queue<Node*>&);
 public:

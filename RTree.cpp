@@ -228,27 +228,7 @@ Node* RTree::splitNode(Node* node) const {
     return group2;
 }
 
-void RTree::insert(const Data &data) {
-    // Calcular bounding box
-    Rect bb = getBoundingBox(data);
-    if (!root) {
-        root = new Node(true, 0);
-        addRegion(root, bb);
-        root->data.push_back(new Data(data));
-        return;
-    }
-    // Buscar region
-    auto curr = root;
-    using pos = struct {Node* node; Rect* region;};
-    stack<pos> parents;
-    while (!curr->isLeaf) {
-        auto regionIndex = getBestRegion(curr, bb);
-        parents.push({curr, &curr->regions[regionIndex]});
-        curr = curr->childs[regionIndex];
-    }
-    // Insertar
-    addRegion(curr, bb);
-    curr->data.push_back(new Data(data));
+void RTree::adjustTree(Node* curr, stack<pos2> &parents) {
     Node *curr2 = nullptr;
     bool rootSplit = false;
     // Si el nodo es invalido, hacer split
@@ -288,6 +268,29 @@ void RTree::insert(const Data &data) {
     }
 }
 
+void RTree::insert(const Data &data) {
+    // Calcular bounding box
+    Rect bb = getBoundingBox(data);
+    if (!root) {
+        root = new Node(true, 0);
+        addRegion(root, bb);
+        root->data.push_back(new Data(data));
+        return;
+    }
+    // Buscar region
+    auto curr = root;
+    stack<pos2> parents;
+    while (!curr->isLeaf) {
+        auto regionIndex = getBestRegion(curr, bb);
+        parents.push({curr, &curr->regions[regionIndex]});
+        curr = curr->childs[regionIndex];
+    }
+    // Insertar
+    addRegion(curr, bb);
+    curr->data.push_back(new Data(data));
+    adjustTree(curr, parents);
+}
+
 // Esta rect dentro de region?
 static bool isOverlapping(const Rect &rect, const Rect &region) {
     return isInRect({rect.x_low, rect.y_low}, region) &&
@@ -325,24 +328,23 @@ void RTree::reinsert(){
 
 void RTree::reinsert2(queue<Node*> &nodes) {
     while(!nodes.empty()) {
-        auto curr = nodes.front();
+        auto nodeToInsert = nodes.front();
         nodes.pop();
-        if (curr->isLeaf) {
-            for (auto &d : curr->data) insert(*d);
+        if (nodeToInsert->isLeaf) {
+            for (auto &d : nodeToInsert->data) insert(*d);
         }
         else {
-            auto curr2 = curr;
-            stack<pos> parents;
-            while (curr2->level > curr->level) {
-                auto regionIndex = getBestRegion(curr2, curr->rect);
-//                parents.push({curr, &curr->regions[regionIndex]});
+            auto curr = root;
+            stack<pos2> parents;
+            while (curr->level > nodeToInsert->level) {
+                auto regionIndex = getBestRegion(curr, nodeToInsert->rect);
+                parents.push({curr, &curr->regions[regionIndex]});
                 curr = curr->childs[regionIndex];
             }
             // ya estamos en el nivel correcto
-            for (auto &region : curr->regions) curr->regions.push_back(region);
-            for (auto &child : curr->childs) curr->childs.push_back(child);
-            if (curr->regions.size() <= order) continue;
-
+            for (auto &region : nodeToInsert->regions) curr->regions.push_back(region);
+            for (auto &child : nodeToInsert->childs) curr->childs.push_back(child);
+            adjustTree(curr, parents);
         }
     }
 }
