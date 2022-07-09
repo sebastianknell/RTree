@@ -76,6 +76,41 @@ RTree::~RTree() {
 
 Node::Node(bool isLeaf, int level): isLeaf(isLeaf), level(level), rect({0, 0, 0, 0}) {}
 
+bool overlapping_b(Rect r1, Rect r2){
+    if((r1.x_high == r2.x_high) || (r1.x_low==r2.x_low) || (r1.y_high=r2.y_high) || (r1.y_low == r2.y_low))
+        return false;
+    if (r1.x_high > r2.x_high || r2.x_low > r2.x_low)
+        return false;
+    if (r1.y_high > r2.y_high || r2.y_low > r1.y_low)
+        return false;
+
+    return true;
+}
+
+double overlapping_c(Rect r1, Rect r2){
+    double Ix, Iy, R1x, R1y, R2x, R2y;
+    R1x = r1.x_high - r1.x_low;
+    R1y = r1.y_high - r1.y_low;
+
+    R2x = r2.x_high - r2.x_low;
+    R2y = r2.y_high - r2.y_low;
+
+    if (min(r1.x_high,r2.x_high)==r1.x_high)  // min(x1a,x1b) = x1a
+        Ix = max(0, r1.x_low - r2.x_high);   // max(0, x2a-x1b)
+    else
+        Ix = max(0, r2.x_low - r1.x_high);
+
+    if (min(r1.y_high,r2.y_high)==r1.y_high)  // min(y1a,y1b) = y1a
+        Iy = max(0, r1.y_low - r2.y_high);   // max(0, y2a-y1b)
+    else
+        Iy = max(0, r2.y_low - r1.y_high);
+
+
+    double coef = (Ix * Iy) / (R1x * R1y);
+
+    return coef;
+}
+
 Node::~Node() {
     for (auto &c : childs) {
         delete c;
