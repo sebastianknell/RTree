@@ -331,7 +331,9 @@ void RTree::reinsert2(queue<Node*> &nodes) {
         auto nodeToInsert = nodes.front();
         nodes.pop();
         if (nodeToInsert->isLeaf) {
-            for (auto &d : nodeToInsert->data) insert(*d);
+            for (auto &d : nodeToInsert->data) {
+                insert(*d);
+            }
         }
         else {
             auto curr = root;
@@ -342,22 +344,47 @@ void RTree::reinsert2(queue<Node*> &nodes) {
                 curr = curr->childs[regionIndex];
             }
             // ya estamos en el nivel correcto
-            for (auto &region : nodeToInsert->regions) curr->regions.push_back(region);
+            for (auto &region : nodeToInsert->regions) addRegion(curr, region);
             for (auto &child : nodeToInsert->childs) curr->childs.push_back(child);
             adjustTree(curr, parents);
         }
     }
 }
 
+static bool checkSubtree(Node* node) {
+    if (!(node->rect == getBoundingRect(node->regions))) return false;
+    if (node->isLeaf) {
+        if (node->level != 0) return false;
+        if (!node->childs.empty()) return false;
+        if (node->regions.size() < 2 || node->data.size() < 2) return false;
+        if (node->regions.size() > 3 || node->data.size() > 3) return false;
+        return true;
+    }
+    if (!node->data.empty()) return false;
+    if (node->regions.size() < 2 || node->childs.size() < 2) return false;
+    if (node->regions.size() > 3 || node->childs.size() > 3) return false;
+    for (auto &c : node->childs) {
+        if (c->level != node->level - 1) return false;
+    }
+    bool isValid = true;
+    for (auto &c : node->childs) {
+        isValid = isValid && checkSubtree(c);
+    }
+    return isValid;
+}
+
 void RTree::remove(const Data &data) {
+    if (!root) return;
     auto bb = getBoundingBox(data);
     stack<pos> parents;
+    stack<pos> dfs;
     auto curr = root;
     bool found = false;
     // Encontrar hoja en recorrido dfs y quedarme con el stack de padres
     if (!curr->isLeaf) {
         for (int i = 0; i < curr->regions.size(); i++) {
             if (isOverlapping(bb, curr->regions[i])) {
+                dfs.push({curr, i});
                 parents.push({curr, i});
             }
         }
@@ -381,17 +408,20 @@ void RTree::remove(const Data &data) {
                 found = true;
             }
             if (found) {
+                dfs.push({curr, i});
                 parents.push({curr, i});
                 break;
             }
         }
     }
-    while (!parents.empty() && !found) {
-        curr = parents.top().node->childs[parents.top().index];
+    while (!dfs.empty() && !found) {
+        curr = dfs.top().node->childs[parents.top().index];
+        dfs.pop();
         if (!curr->isLeaf) {
             bool isCandidate = false;
             for (int i = 0; i < curr->regions.size(); i++) {
                 if (isOverlapping(bb, curr->regions[i])) {
+                    dfs.push({curr, i});
                     parents.push({curr, i});
                     isCandidate = true;
                 }
@@ -434,28 +464,34 @@ void RTree::remove(const Data &data) {
     curr->regions.erase(curr->regions.begin() + currIndex);
     curr->data.erase(curr->data.begin() + currIndex);
     curr->rect = getBoundingRect(curr->regions);
-    auto temp = curr;
 
-    // Adjust Parent Bounding Boxes
+    // Ajustar bounding boxes de los padres
+    auto temp = curr;
+    queue<Node*> toReinsert;
     while(!parents.empty() && temp != root){
         auto p = parents.top();
+        while (!parents.empty() && parents.top().node->level == p.node->level) parents.pop();
         auto m = (int)order/2 + order%2;
 
-        if(temp->regions.size() >= m){
-            p.node->regions[p.index] = temp->rect;
+        if (temp->regions.size() < m) {
+            p.node->regions.erase(p.node->regions.begin() + p.index);
+            p.node->childs.erase(p.node->childs.begin() + p.index);
+            toReinsert.push(temp);
         }
+        else p.node->regions[p.index] = getBoundingRect(temp->regions);
         p.node->rect = getBoundingRect(p.node->regions);
 
-        parents.pop();
         temp = p.node;
     }
-
-    // Si no hay huerfanos, return.
-    auto minEntries = (int)order/2 + order%2;
-    if(curr->data.size() >= minEntries || curr == root) return;
+    if (root->childs.size() == 1) {
+        auto oldRoot = root;
+        root = root->childs.front();
+        oldRoot->childs.clear();
+        delete oldRoot;
+    }
 
     // Reinsertar data huerfana
-    reinsert();
+    reinsert2(toReinsert);
 }
 
 vector<knnResult> RTree::knn(Point p, int k) {
@@ -591,23 +627,22 @@ void RTree::useCircles() {
 int colorIdx = 0;
 
 static void showNode(Node* node, cv::InputOutputArray &img) {
-    // TODO pintar el arbol de arriba hacia abajo para que las hojas no pinten por encima a las regiones superiores
     if (node == nullptr) return;
     colorIdx++;
     if (node->isLeaf) {
         for (int i = 0; i < node->regions.size(); i++) {
             if (node->data[i]->size() == 1) {
-                cv::circle(img, node->data[i]->back(), radius, colors[3], -1);
+                cv::circle(img, node->data[i]->back(), radius, colors[0], -1);
             }
             else {
                 cv::rectangle(img, {node->regions[i].x_low, node->regions[i].y_low}, {node->regions[i].x_high-1, node->regions[i].y_high-1}, {0,0,0}, 1);
-                cv::polylines(img, *node->data[i], true, colors[3], 2);
+                cv::polylines(img, *node->data[i], true, colors[0], 2);
             }
         }
     }
     else {
         for (const auto &r : node->regions) {
-            cv::rectangle(img, {r.x_low, r.y_low}, {r.x_high-1, r.y_high-1}, colors[colorIdx%6], 2);
+            cv::rectangle(img, {r.x_low, r.y_low}, {r.x_high-1, r.y_high-1}, colors[node->level%6], 2);
         }
         for (const auto &c : node->childs) {
 //            cv::circle(img, c->circle.center, c->circle.radius, colors[colorIdx%6], 2);
