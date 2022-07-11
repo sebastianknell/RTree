@@ -22,7 +22,7 @@ struct HData {
 
 struct HilbertNode {
     bool isLeaf;
-    int lhv;
+    int lhv, lvl;
     HilbertNode* parent;
     Rect rect;
 
@@ -30,7 +30,7 @@ struct HilbertNode {
     vector<HilbertNode*> children;
     vector<HData> data;
 
-    explicit HilbertNode(bool isLeaf): isLeaf(isLeaf), lhv(0), parent(nullptr) {}
+    explicit HilbertNode(bool isLeaf): isLeaf(isLeaf), lhv(0), parent(nullptr), lvl(0) {}
     HilbertNode() {}
     void insertOrdered(HData hdata, Rect region);
     void updateBoundingBox();
@@ -40,6 +40,7 @@ struct HilbertNode {
 struct Entry {
     bool type;  // 0 = data, 1 = child
     HData data;
+    Rect rect;  // rectangulo asociado a la data
     HilbertNode* child;
 
     Entry() {}
@@ -60,6 +61,7 @@ public:
     void adjustTree(HilbertNode*);
     HilbertNode* chooseLeaf(HilbertNode*, int);
     void handleOverflow(HilbertNode*);
+    void showHilbert(cv::InputOutputArray&);
 };
 
 

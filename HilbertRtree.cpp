@@ -83,6 +83,7 @@ void HilbertRtree::handleOverflow(HilbertNode* v) {
         root = newRoot;
     }
     HilbertNode* p = v->parent;
+    p->lvl = v->lvl+1;
     vector<HilbertNode*> S;
 
     // agrego los que no son v (izq -> der)
@@ -99,15 +100,18 @@ void HilbertRtree::handleOverflow(HilbertNode* v) {
     for (auto node : S) {
         Entry e;
         if (node->isLeaf) {
+            int idx = 0;
             for (auto entry : node->data) {
                 e.type = 0;
                 e.data = entry;
+                e.rect = node->regions[idx++];
                 C.push(e);
             }
         } else {
             for (auto entry : node->children) {
                 e.type = 1;
                 e.child = entry;
+                e.rect = entry->rect;   // capaz es innecesario
                 C.push(e);
             }
         }
@@ -126,6 +130,10 @@ void HilbertRtree::handleOverflow(HilbertNode* v) {
         HilbertNode* currNode = S[i];
         if (currNode->isLeaf) currNode->data.clear();
         else currNode->children.clear();
+        
+        /* empiezan cambios */
+        currNode->regions.clear();
+        /* terminan cambios */
 
         for (int j = 0; j < q; j++) {
             if (currNode->isLeaf) {
@@ -133,17 +141,23 @@ void HilbertRtree::handleOverflow(HilbertNode* v) {
             } else {
                 currNode->children.push_back(C.top().child);
             }
+            /* empiezan cambios */
+            currNode->regions.push_back(C.top().rect);
+            /* terminan cambios */
             C.pop();
         }
         // actualizar currNode
         currNode->updateBoundingBox();
         currNode->updateLHV();
+        // actualizando los bounding rects de los nodos hoja
+        currNode->rect = getBoundingRect(currNode->regions);
     }
 
     // agregar elementos excedentes al ultimo nodo
     HilbertNode* lastNode = S[S.size()-1];
     if (lastNode->isLeaf) lastNode->data.clear();
     else lastNode->children.clear();
+    lastNode->regions.clear();
     
     int it = C.size();
     for (int i = 0; i < it; i++) {
@@ -152,10 +166,22 @@ void HilbertRtree::handleOverflow(HilbertNode* v) {
         } else {
             lastNode->children.push_back(C.top().child);
         }
+        /* empiezan cambios */
+        lastNode->regions.push_back(C.top().rect);
+        /* terminan cambios */
         C.pop();
     }
     lastNode->updateBoundingBox();
     lastNode->updateLHV();
+    // actualizando los bounding rects del lasstNode
+    lastNode->rect = getBoundingRect(lastNode->regions);
+
+    // actualizando el vector de regions de el nodo padre
+    for (auto child : p->children)
+        p->regions.push_back(child->rect);
+    
+    // actualizando el bounding rect del padre
+    p->rect = getBoundingRect(p->regions);
 
     if (p->children.size() > order) handleOverflow(p);
 }
@@ -197,9 +223,10 @@ void HilbertNode::insertOrdered(HData hdata, Rect region) {
         int insertPos = 0;
         for (int i = 0; i < data.size(); i++) {
             int currIdx = data[i].hIndex;
-            if (hdata.hIndex > currIdx) {
+            if (hdata.hIndex > currIdx)
                 insertPos = i+1;
-            } else break;
+            else
+                break;
         }
         data.insert(data.begin() + insertPos, hdata);
         regions.insert(regions.begin() + insertPos, region);
@@ -214,6 +241,9 @@ void HilbertRtree::insert(const Data data) {
     HilbertNode* node = chooseLeaf(root, h);
     node->insertOrdered(hd, R);
 
+    // actualizar el rect del nodo en el que se inserto la data
+    node->rect = getBoundingRect(node->regions);
+
     if (node->data.size() > order) {
         handleOverflow(node);
     }
@@ -221,3 +251,42 @@ void HilbertRtree::insert(const Data data) {
     adjustTree(node);
 }
 
+void HilbertRtree::remove(const Data) {
+    cout << "ESTA VIVO" << endl;
+}
+
+/////////////////////////////////////////////////////////////////////////
+
+
+
+int colorIdx2 = 0;
+
+static void showHilbertNode(HilbertNode* node, cv::InputOutputArray &img) {
+    if (node == nullptr) return;
+    colorIdx2++;
+    if (node->isLeaf) {
+        for (int i = 0; i < node->regions.size(); i++) {
+            if (node->data[i].data.size() == 1) {
+                cv::circle(img, node->data[i].data.back(), radius, colors[0], -1);
+            }
+            else {
+                cv::rectangle(img, {node->regions[i].x_low, node->regions[i].y_low}, {node->regions[i].x_high-1, node->regions[i].y_high-1}, {0,0,0}, 1);
+                cv::polylines(img, node->data[i].data, true, colors[0], 2);
+            }
+        }
+    }
+    else {
+        for (const auto &r : node->regions) {
+            cv::rectangle(img, {r.x_low, r.y_low}, {r.x_high-1, r.y_high-1}, colors[node->lvl%6], 2); // level
+        }
+        for (const auto &c : node->children) {
+//            cv::circle(img, c->circle.center, c->circle.radius, colors[colorIdx%6], 2);
+            showHilbertNode(c, img);
+        }
+    }
+}
+
+void HilbertRtree::showHilbert(cv::InputOutputArray& img) {
+    colorIdx2 = 0;
+    showHilbertNode(root, img);
+}
