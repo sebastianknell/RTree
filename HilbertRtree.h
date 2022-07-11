@@ -12,27 +12,54 @@
 
 using namespace std;
 
-using HData = struct {Data* data; int hIndex;};
+struct HData {
+    Data data;
+    int hIndex;
+    HData() {}
+    HData(Data data, int hIndex): data(data), hIndex(hIndex) {}
+    ~HData() {}
+};
 
-struct Node {
+struct HilbertNode {
     bool isLeaf;
-    Node* prev; // se necesita para pedir del hermano?
     int lhv;
+    HilbertNode* parent;
     Rect rect;
+
     vector<Rect> regions;
-    vector<Node*> childs;
+    vector<HilbertNode*> children;
     vector<HData> data;
-    explicit Node(bool isLeaf): isLeaf(isLeaf), lhv(0) {}
+
+    explicit HilbertNode(bool isLeaf): isLeaf(isLeaf), lhv(0), parent(nullptr) {}
+    HilbertNode() {}
+    void insertOrdered(HData hdata, Rect region);
+    void updateBoundingBox();
+    void updateLHV();
+};
+
+struct Entry {
+    bool type;  // 0 = data, 1 = child
+    HData data;
+    HilbertNode* child;
+
+    Entry() {}
+    ~Entry() {}
 };
 
 class HilbertRtree {
     int gridWidth, gridHeight, levels, order;
-    Node* root;
+    HilbertNode* root;
     int getHilbertIndex(Point);
 public:
-    HilbertRtree(int order = 3): order(order), root(nullptr) {}
-    void insert(Data&);
-    void remove(Data&);
+    HilbertRtree(int gridW, int gridH, int order = 3) : order(order), gridWidth(gridW), gridHeight(gridH) {
+        this->levels = 9;
+        this->root = new HilbertNode(true);
+    }
+    void insert(const Data);
+    void remove(const Data);
+    void adjustTree(HilbertNode*);
+    HilbertNode* chooseLeaf(HilbertNode*, int);
+    void handleOverflow(HilbertNode*);
 };
 
 

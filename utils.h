@@ -13,7 +13,8 @@
 using namespace std;
 
 using Point = cv::Point;
-using Rect = struct {int x_low; int y_low; int x_high; int y_high;};
+struct Rect {int x_low; int y_low; int x_high; int y_high;};
+// using Rect = struct {int x_low; int y_low; int x_high; int y_high;};
 using Data = vector<Point>;
 
 extern int radius;

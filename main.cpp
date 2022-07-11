@@ -1,14 +1,17 @@
 #include "RTree.h"
+#include "HilbertRtree.h"
 
 using namespace std;
 
-const int height = 720;
-const int width = 1080;
+const int height = 1024;
+const int width = 1024;
 const string windowName = "RTree Visualization";
 cv::Mat img(height, width, CV_8UC3, {255, 255, 255});
 bool drawing = false;
 vector<Point> currentDrawing;
 RTree rtree;
+
+HilbertRtree* hrt = new HilbertRtree(width, height);
 
 static void clickHandler(int event, int x, int y, int flags, void*) {
     if (event == cv::EVENT_LBUTTONDOWN) {
@@ -77,16 +80,26 @@ int main() {
 //    rtree.insert({{671, 254}});
 //    rtree.insert({{200, 435}});
 //    rtree.useCircles();
-    rtree.show(img);
-    cv::imshow(windowName, img);
-    cv::waitKey(1);
 
-    cv::setMouseCallback(windowName, clickHandler);
+//    rtree.show(img);
+//    cv::imshow(windowName, img);
+//    cv::waitKey(1);
 
-    char c;
-    do {
-        c = (char)cv::waitKey(0);
-    } while (c != 'q');
+//    cv::setMouseCallback(windowName, clickHandler);
 
+////    char c;
+//    do {
+//        c = (char)cv::waitKey(0);
+//    } while (c != 'q');
+
+
+    hrt->insert({{180, 70}});
+    hrt->insert({{80, 100}});
+    hrt->insert({{100, 20}});
+    hrt->insert({{500, 234}});
+    hrt->insert({{176, 374}});
+    hrt->insert({{260, 680}});
+    // hrt->insert({{80, 100}});
+    // hrt->useCircles();
     return 0;
 }

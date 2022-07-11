@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <cmath>
 #include <random>
-#include <opencv2/opencv.hpp>
 #include "utils.h"
 
 using namespace std;
