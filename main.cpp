@@ -11,7 +11,7 @@ bool drawing = false;
 vector<Point> currentDrawing;
 RTree rtree;
 
-HilbertRtree* hrt = new HilbertRtree(width, height, 4);
+HilbertRtree* hrt = new HilbertRtree(width, height);
 
 static void clickHandler2(int event, int x, int y, int flags, void*) {
     if (event == cv::EVENT_LBUTTONDOWN) {

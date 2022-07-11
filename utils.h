@@ -13,7 +13,15 @@
 using namespace std;
 
 using Point = cv::Point;
-struct Rect {int x_low; int y_low; int x_high; int y_high;};
+struct Rect {
+    int x_low; int y_low; int x_high; int y_high;
+    void operator=(Rect r) {
+        x_low = r.x_low;
+        y_low = r.y_low;
+        x_high = r.x_high;
+        y_high = r.y_high;
+    }
+};
 // using Rect = struct {int x_low; int y_low; int x_high; int y_high;};
 using Data = vector<Point>;
 
