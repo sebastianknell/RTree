@@ -36,5 +36,6 @@ double getDistance(Point a, Point b);
 Rect getBoundingBox(const Data &data);
 Rect getBoundingRect(const vector<Rect> &regions);
 Point getCenter(const Rect&);
+bool rectsOverlap(Rect r1, Rect r2);
 
 #endif //RTREE_UTILS_H

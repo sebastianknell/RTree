@@ -119,7 +119,7 @@ void HilbertRtree::handleOverflow(HilbertNode* v) {
     }
 
     // si todos los nodos en S tienen overflow...
-    if (S.size()*order < C.size()) {
+    if (S.size()*M < C.size()) {
         HilbertNode* w = new HilbertNode(S[0]->isLeaf);
         w->parent = p;
         p->children.insert(p->children.begin(), w);
@@ -193,7 +193,7 @@ void HilbertRtree::handleOverflow(HilbertNode* v) {
     p->rect = getBoundingRect(p->regions);
     adjustTree(p);
 
-    if (p->children.size() > order) handleOverflow(p);
+    if (p->children.size() > M) handleOverflow(p);
 }
 
 void HilbertNode::updateBoundingBox() {
@@ -254,15 +254,15 @@ void HilbertNode::insertOrdered(HData hdata, Rect region) {
     }
 }
 
-void HilbertRtree::insert(const Data data) {
-    auto R = getBoundingBox(data);
+void HilbertRtree::insert(const Data obj) {
+    auto R = getBoundingBox(obj);
     auto h = getHilbertIndex(getCenter(R));
-    HData hd(data, h);
+    HData hd(obj, h);
 
     HilbertNode* node = chooseLeaf(root, h);
     node->insertOrdered(hd, R);
 
-    if (node->data.size() > order) {
+    if (node->data.size() > M) {
         cout << "ENTRA" << endl;
         handleOverflow(node);
     }
@@ -274,12 +274,63 @@ void HilbertRtree::insert(const Data data) {
     ;
 }
 
-void HilbertRtree::remove(const Data) {
-    cout << "ESTA VIVO" << endl;
+/////////////////////////////////////////////////////////////////////////
+
+bool HilbertRtree::search(const Data obj) {
+    // como la data es la misma se puede buscar con el indice de hilbert
+
+    auto R = getBoundingBox(obj);
+    auto h = getHilbertIndex(getCenter(R));
+
+    // TODO
+
+    return false;
+}
+
+vector<Data> knn(const Point) {
+    // como no necesariamente se busca el objeto en el mismo punto de consulta,
+    // se tiene que buscar en todas las regiones que intersequen
+    
+    vector<Data> v;
+    return v;
 }
 
 /////////////////////////////////////////////////////////////////////////
 
+void HilbertRtree::handleUnderflow(HilbertNode* node) {
+
+}
+
+void HilbertRtree::remove(const Data obj, int type) {
+    /* Rect window_q = {q.x, q.y, q.x, q.y};
+
+    // encontrar la hoja v que puede contener la data
+    HilbertNode* v = findLeaf(root, window_q);
+    if (v == nullptr) {
+        cout << "Object was not found" << endl;
+        return;
+    }; 
+
+    // recorrer v y borrar la data si se encuentra
+     bool found = false;
+    for (auto it = v->data.begin(); it != v->data.end();) {
+        if () {
+            it = v->data.erase(it);
+            found = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        cout << "Object was not found" << endl;
+        return;
+    } 
+
+    if (v->data.size() < m) handleUnderflow(v);
+    adjustTree(v); */
+}
+
+/////////////////////////////////////////////////////////////////////////
 
 
 int colorIdx2 = 0;

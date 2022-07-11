@@ -27,8 +27,8 @@ struct HilbertNode {
     Rect rect;
 
     vector<Rect> regions;
-    vector<HilbertNode*> children;
-    vector<HData> data;
+    vector<HilbertNode*> children;  // si es interno
+    vector<HData> data;             // si es hoja
 
     explicit HilbertNode(bool isLeaf): isLeaf(isLeaf), lhv(0), parent(nullptr), lvl(0) {}
     HilbertNode() {}
@@ -48,19 +48,22 @@ struct Entry {
 };
 
 class HilbertRtree {
-    int gridWidth, gridHeight, levels, order;
+    int gridWidth, gridHeight, levels, M, m;
     HilbertNode* root;
     int getHilbertIndex(Point);
 public:
-    HilbertRtree(int gridW, int gridH, int order = 3) : order(order), gridWidth(gridW), gridHeight(gridH) {
+    HilbertRtree(int gridW, int gridH, int M = 3, int m = 1) : gridWidth(gridW), gridHeight(gridH), M(M), m(m) {
         this->levels = 9;
         this->root = new HilbertNode(true);
     }
     void insert(const Data);
-    void remove(const Data);
+    void remove(const Data, int type = 1);
+    bool search(const Data);
+    vector<Data> knn(const Point);
     void adjustTree(HilbertNode*);
     HilbertNode* chooseLeaf(HilbertNode*, int);
     void handleOverflow(HilbertNode*);
+    void handleUnderflow(HilbertNode*);
     void showHilbert(cv::InputOutputArray&);
 };
 
