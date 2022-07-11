@@ -10,7 +10,11 @@
 #include "utils.h"
 #include "rapidcsv.h"
 
-Data generatePolygon();
+bool isOverlapping(Rect, Rect);
+double getOverlap(Rect, Rect);
+double getTotalOverlap(vector<Rect>&);
+Data generatePolygon(int, int);
+void testOverlap();
 void testSearch(Tree&);
 void testInsert(Tree&);
 void testRemove(Tree&);

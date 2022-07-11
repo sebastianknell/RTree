@@ -31,10 +31,6 @@ struct Node {
     ~Node();
 };
 
-bool overlapping_b(Rect,Rect);
-
-double overlapping_c(Rect,Rect);
-
 using pos = struct {Node* node; int index;};
 using pos2 = struct {Node* node; Rect* region;};
 using lineTo = struct {Point p; double distance;};

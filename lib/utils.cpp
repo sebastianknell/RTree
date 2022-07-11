@@ -80,3 +80,7 @@ Rect getBoundingRect(const vector<Rect> &regions) {
 Point getCenter(const Rect &rect) {
     return {(rect.x_low + rect.x_high) / 2, (rect.y_low + rect.y_high) / 2};
 }
+
+int getArea(const Rect &rect) {
+    return (rect.x_high - rect.x_low) * (rect.y_high - rect.y_low);
+}

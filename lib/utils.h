@@ -34,5 +34,6 @@ double getDistance(Point a, Point b);
 Rect getBoundingBox(const Data &data);
 Rect getBoundingRect(const vector<Rect> &regions);
 Point getCenter(const Rect&);
+int getArea(const Rect&);
 
 #endif //RTREE_UTILS_H

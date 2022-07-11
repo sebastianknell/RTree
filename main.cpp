@@ -1,4 +1,5 @@
 #include "RTree.h"
+#include "lib/testing.h"
 
 using namespace std;
 
@@ -48,39 +49,28 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
         rtree.show(img);
         cv::imshow(windowName, img);
     }
-    /*else if (event == cv::EVENT_MOUSEMOVE) {
+    else if (event == cv::EVENT_MOUSEMOVE) {
         if (!drawing && !rtree.isEmpty()) {
             img.setTo(cv::Scalar(255, 255, 255));
             rtree.show(img);
 //            auto nns = rtree.depthFirst({x, y}, 3);
             auto nns = rtree.knn({x, y}, 3);
             for (auto nn : nns) {
-//                cv::line(img, {x, y}, nn.p, {0, 0, 0}, 1);
+                cv::line(img, {x, y}, nn.p, {0, 0, 0}, 1);
                 if (nn.node->data[nn.index]->size() == 1)
                     cv::circle(img, nn.node->data[nn.index]->back(), radius, colors[5], -1);
                 else cv::polylines(img, *nn.node->data[nn.index], true, colors[5], 2);
             }
             cv::imshow(windowName, img);
         }
-    }*/
+    }
 }
 
 int main() {
-//    rtree.insert({{184, 76}});
-//    rtree.insert({{776, 138}});
-//    rtree.insert({{582, 354}});
-//    rtree.insert({{228, 229}});
-//    rtree.insert({{281, 316}});
-//    rtree.insert({{177, 370}});
-//    rtree.insert({{100, 269}});
-//    rtree.insert({{324, 164}});
-//    rtree.insert({{671, 254}});
-//    rtree.insert({{200, 435}});
-//    rtree.useCircles();
-    rtree.show(img);
+    testInsert(rtree);
+    /*rtree.show(img);
     cv::imshow(windowName, img);
     cv::waitKey(1);
-
     cv::setMouseCallback(windowName, clickHandler);
 
     char c;
@@ -88,5 +78,5 @@ int main() {
         c = (char)cv::waitKey(0);
     } while (c != 'q');
 
-    return 0;
+    return 0;*/
 }
