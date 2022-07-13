@@ -67,16 +67,19 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
 }
 
 int main() {
-    testInsert(rtree);
-    rtree.show(img);
-    cv::imshow(windowName, img);
-    cv::waitKey(1);
-    cv::setMouseCallback(windowName, clickHandler);
-
-    char c;
-    do {
-        c = (char)cv::waitKey(0);
-    } while (c != 'q');
-
+//    testInsert(rtree);
+//    testSearch(rtree);
+    testRemove(rtree);
+//    testOverlap();
+//    rtree.show(img);
+//    cv::imshow(windowName, img);
+//    cv::waitKey(1);
+//    cv::setMouseCallback(windowName, clickHandler);
+//
+//    char c;
+//    do {
+//        c = (char)cv::waitKey(0);
+//    } while (c != 'q');
+//
     return 0;
 }

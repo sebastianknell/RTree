@@ -141,3 +141,65 @@ void testInsert(Tree &tree) {
     }
     doc.Save("../output/insert.csv");
 }
+
+void testSearch(Tree &tree) {
+    rapidcsv::Document doc;
+    doc.InsertColumn<int>(0, {1000, 2000, 3000, 4000, 5000}, "n");
+    const int iterations = 100;
+    for (int k = 0; k < iterations; k++) {
+        vector<long> times;
+        for (int i = 0; i < 5; i++) {
+            vector<Data> polygons;
+            for (int j =0; j < 1000; j++) {
+                auto polygon = generatePolygon(720, 720);
+                polygons.push_back(polygon);
+                tree.insert(polygon);
+            }
+            auto t1 = chrono::high_resolution_clock::now();
+            for (auto &p : polygons) {
+                tree.search(p);
+            }
+            auto t2 = chrono::high_resolution_clock::now();
+            auto duration = chrono::duration_cast<chrono::microseconds>(t2-t1).count();
+            times.push_back(duration);
+        }
+        doc.InsertColumn(k+1, times, "times" + to_string(k+1));
+        tree.clear();
+    }
+    doc.Save("../output/search.csv");
+}
+
+void testRemove(Tree &tree) {
+    rapidcsv::Document doc;
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_int_distribution<std::mt19937::result_type> random(0,1000);
+    doc.InsertColumn<int>(0, {1000, 2000, 3000, 4000, 5000}, "n");
+    const int iterations = 2;
+    for (int k = 0; k < iterations; k++) {
+        vector<long> times;
+        vector<Data> polygons;
+        for (int j =0; j < 5000; j++) {
+            auto polygon = generatePolygon(720, 720);
+            polygons.push_back(polygon);
+            tree.insert(polygon);
+        }
+        for (int i = 0; i < 5; i++) {
+            auto t1 = chrono::high_resolution_clock::now();
+            for (int j = 0; j < 1000; j++) {
+                auto index = random(rng) % polygons.size();
+                // TODO algo esta fallando en el remove
+                tree.remove(polygons[index]);
+                // Problema: se cuenta para el tiempo
+                polygons.erase(polygons.begin() + index);
+            }
+            auto t2 = chrono::high_resolution_clock::now();
+            auto duration = chrono::duration_cast<chrono::microseconds>(t2-t1).count();
+            times.push_back(duration);
+        }
+        doc.InsertColumn(k+1, times, "times" + to_string(k+1));
+        tree.clear();
+        times.clear();
+    }
+    doc.Save("../output/remove.csv");
+}
