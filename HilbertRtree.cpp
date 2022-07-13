@@ -141,6 +141,7 @@ void HilbertRtree::handleOverflow(HilbertNode* v) {
                 currNode->data.push_back(C.top().data);
             } else {
                 currNode->children.push_back(C.top().child);
+                currNode->children[j]->parent = currNode;
             }
             /* empiezan cambios */
             currNode->regions.push_back(C.top().rect);
@@ -167,6 +168,7 @@ void HilbertRtree::handleOverflow(HilbertNode* v) {
             lastNode->data.push_back(C.top().data);
         } else {
             lastNode->children.push_back(C.top().child);
+            lastNode->children[i]->parent = lastNode;
         }
         /* empiezan cambios */
         lastNode->regions.push_back(C.top().rect);
@@ -269,10 +271,6 @@ void HilbertRtree::insert(const Data obj) {
     }
 
     adjustTree(node);
-
-    // actualizar el rect del nodo en el que se inserto la data
-    // node->rect = getBoundingRect(node->regions);
-    ;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -288,12 +286,9 @@ bool operator==(Data data1, Data data2) {
 }
 
 bool HilbertRtree::search(const Data obj) {
-    // como la data es la misma se puede buscar con el indice de hilbert
-
     auto R = getBoundingBox(obj);
     auto h = getHilbertIndex(getCenter(R));
 
-    // TODO
     HilbertNode* node = chooseLeaf(root, h);
     for (int i=0; i<node->data.size(); i++)
         if (node->data[i].data == obj)
@@ -380,7 +375,6 @@ void HilbertRtree::handleUnderflow(HilbertNode* node) {
     HilbertNode* p = node->parent;
     vector<HilbertNode*> S;
 
-    ;
 
     ;
 }

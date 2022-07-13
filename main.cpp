@@ -58,7 +58,7 @@ static void clickHandler2(int event, int x, int y, int flags, void*) {
 //            auto nns = rtree.depthFirst({x, y}, 3);
             auto nns = hrt->knn({x, y}, 3);
             for (auto nn : nns) {
-//                cv::line(img, {x, y}, nn.p, {0, 0, 0}, 1);
+                cv::line(img, {x, y}, nn.p, {0, 0, 0}, 1);
                 if (nn.node->data[nn.index].data.size() == 1)
                     cv::circle(img, nn.node->data[nn.index].data.back(), radius, colors[5], -1);
                 else cv::polylines(img, nn.node->data[nn.index].data, true, colors[5], 2);
@@ -106,7 +106,7 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
         rtree.show(img);
         cv::imshow(windowName, img);
     }
-    /*else if (event == cv::EVENT_MOUSEMOVE) {
+    else if (event == cv::EVENT_MOUSEMOVE) {
         if (!drawing && !rtree.isEmpty()) {
             img.setTo(cv::Scalar(255, 255, 255));
             rtree.show(img);
@@ -120,7 +120,7 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
             }
             cv::imshow(windowName, img);
         }
-    }*/
+    }
 }
 
 int main() {
@@ -158,12 +158,29 @@ int main() {
     hrt->insert({{260, 680}});
     */
 
+// caso de falla:
+/*
+    hrt->insert({{376, 196}});
+    hrt->insert({{630, 274}});
+    hrt->insert({{515, 367}});
+    hrt->insert({{236, 295}});
+    // entra
+    hrt->insert({{447, 114}});
+    hrt->insert({{758, 273}});
+    // entra
+    hrt->insert({{525, 489}});
+    // entra
+    hrt->insert({{184, 286}});
+    hrt->insert({{539, 54}});
+    // entra
+    hrt->insert({{857, 272}});
+*/
 
     hrt->showHilbert(img);
     cv::imshow(windowName, img);
     cv::waitKey(1);
 
-    cv::setMouseCallback(windowName, clickHandler2);
+    cv::setMouseCallback(windowName, clickHandler);
 
     char c;
     do {
