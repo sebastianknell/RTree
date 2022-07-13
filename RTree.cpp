@@ -495,11 +495,11 @@ void RTree::remove(const Data &data) {
 }
 
 vector<knnResult> RTree::knn(Point p, int k) {
-    using distance = struct {Node* node; int index; double distance; Point p;};
-    auto cmp = [](distance a, distance b) {
+    using dist = struct {Node* node; int index; double distance; Point p;};
+    auto cmp = [](dist a, dist b) {
         return a.distance > b.distance;
     };
-    priority_queue<distance, vector<distance>, decltype(cmp)> nodes(cmp);
+    priority_queue<dist, vector<dist>, decltype(cmp)> nodes(cmp);
     vector<knnResult> knn;
     for (int i = 0; i < root->regions.size(); i++)
         if (!root->isLeaf)
@@ -531,11 +531,11 @@ vector<knnResult> RTree::knn(Point p, int k) {
 }
 
 vector<knnResult> RTree::depthFirst(Point p, int k) {
-    using distance = struct {Node* node; int index; double distance; Point p;};
-    auto cmp = [](distance a, distance b) {
+    using dist = struct {Node* node; int index; double distance; Point p;};
+    auto cmp = [](dist a, dist b) {
         return a.distance < b.distance;
     };
-    priority_queue<distance, vector<distance>, decltype(cmp)> nodes(cmp);
+    priority_queue<dist, vector<dist>, decltype(cmp)> nodes(cmp);
     double dmax = INT_MAX;
     stack<Node*> stack;
     stack.push(root);

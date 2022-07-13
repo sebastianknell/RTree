@@ -53,7 +53,7 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
         if (!drawing && !rtree.isEmpty()) {
             img.setTo(cv::Scalar(255, 255, 255));
             rtree.show(img);
-//            auto nns = rtree.depthFirst({x, y}, 3);
+            //auto nns = rtree.depthFirst({x, y}, 3);
             auto nns = rtree.knn({x, y}, 3);
             for (auto nn : nns) {
                 cv::line(img, {x, y}, nn.p, {0, 0, 0}, 1);
@@ -76,7 +76,7 @@ int main() {
     char c;
     do {
         c = (char)cv::waitKey(0);
-    } while (c != 'q');
+    } while (c != 'q');*/
 
-    return 0;*/
+    return 0;
 }
