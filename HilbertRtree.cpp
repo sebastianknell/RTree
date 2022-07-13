@@ -290,9 +290,17 @@ pair<int, HilbertNode*> HilbertRtree::search(const Data obj) {
     auto h = getHilbertIndex(getCenter(R));
 
     HilbertNode* node = chooseLeaf(root, h);
-    for (int i=0; i<node->data.size(); i++)
-        if (node->data[i].data == obj)
-            return make_pair(i, node);    
+    for (int i=0; i<node->data.size(); i++) {
+        if (obj.size() == 1 &&
+            (node->data[i].data.size() == 1 && isInCircle(node->data[i].data[0], obj[0], 20) || isInRect(obj.front(), node->regions[i]))
+            )
+        {
+            return make_pair(i, node);
+        } else if ((node->data[i].data.size() > 1 && obj.size() == 1 && isInRect(obj.front(), node->regions[i])) ||
+                    node->data[i].data == obj) {
+            return make_pair(i, node);
+        }
+    }
 
     return make_pair(-1, nullptr);
 }
@@ -488,7 +496,15 @@ void HilbertRtree::handleUnderflow(HilbertNode* v) {
     p->rect = getBoundingRect(p->regions);
     adjustTree(p);
 
-    if (p->children.size() < m) handleUnderflow(p);
+
+    if (p->children.size() == m && p == root) {
+        root = root->children[0];
+        root->parent = nullptr;
+    }
+
+    if (p->children.size() < m) {
+        handleUnderflow(p);
+    }
 }
 
 void HilbertRtree::remove(const Data obj) {
@@ -502,9 +518,10 @@ void HilbertRtree::remove(const Data obj) {
     node->data.erase(it);
     node->regions.erase(it2);
 
-    if (node->data.size() < m) handleUnderflow(node);
+    if (node->data.size() < m && node != root) handleUnderflow(node);
 
-    adjustTree(node);
+    if (node->data.size() > 0)
+        adjustTree(node);
 }
 
 /* Rect window_q = {q.x, q.y, q.x, q.y};
