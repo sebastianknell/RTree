@@ -15,7 +15,7 @@ bool isOverlapping(Rect r1, Rect r2){
     return true;
 }
 
-double getOverlap(Rect r1, Rect r2){
+double getOverlap(Rect r1, Rect r2) {
     double Ix, Iy, R1x, R1y, R2x, R2y;
     R1x = r1.x_high - r1.x_low;
     R1y = r1.y_high - r1.y_low;
@@ -40,17 +40,12 @@ double getOverlap(Rect r1, Rect r2){
 }
 
 double getTotalOverlap(vector<Rect> &rects) {
-//    TODO change to sum trees
-//    vector<double> intersections;
-//    vector<double> totals;
     double intersection = 0.0;
     double total = 0.0;
     for (int i = 0; i < rects.size(); i++) {
         for (int j = i+1; j < rects.size(); j++) {
             auto overlap = getOverlap(rects[i], rects[j]);
             auto S = getArea(rects[i]) + getArea(rects[j]) - overlap;
-//            intersections.push_back(overlap);
-//            totals.push_back(S);
             intersection += overlap;
             total += S;
         }
@@ -62,8 +57,8 @@ Data generatePolygon(int gridWidth, int gridHeight) {
     std::random_device dev;
     std::mt19937 rng(dev());
     std::uniform_int_distribution<std::mt19937::result_type> randomPercent(100,300);
-    int width = gridWidth * (randomPercent(rng) / 1000.0);
-    int height = 20;
+    int width = gridWidth * (randomPercent(rng) / 100.0) / 100.0;
+    int height = gridHeight * (randomPercent(rng) / 100.0) / 100.0;
     std::uniform_int_distribution<std::mt19937::result_type> random(width,720);
     int x = random(rng);
     int y = random(rng);
@@ -77,7 +72,6 @@ Data generatePolygon(int gridWidth, int gridHeight) {
     n = random(rng) % 2 + 1;
     std::uniform_int_distribution<std::mt19937::result_type> random1(bb.x_low, bb.x_low+width);
     p1 = {(int)random1(rng), bb.y_low};
-    auto start = p1;
     if (n == 2) {
         p2 = {(int)random1(rng), bb.y_low};
         polygon.push_back(p1.x < p2.x ? p1 : p2);
@@ -90,27 +84,26 @@ Data generatePolygon(int gridWidth, int gridHeight) {
     p1 = {bb.x_high, (int)random2(rng)};
     if (n == 2) {
         p2 = {bb.x_high, (int)random2(rng)};
-        polygon.push_back(p1.x < p2.x ? p1 : p2);
-        polygon.push_back(p1.x < p2.x ? p2 : p1);
+        polygon.push_back(p1.y < p2.y ? p1 : p2);
+        polygon.push_back(p1.y < p2.y ? p2 : p1);
     }
     else polygon.push_back(p1);
     // abajo
     p1 = {(int)random1(rng), bb.y_high};
     if (n == 2) {
         p2 = {(int)random1(rng), bb.y_high};
-        polygon.push_back(p1.x < p2.x ? p1 : p2);
         polygon.push_back(p1.x < p2.x ? p2 : p1);
+        polygon.push_back(p1.x < p2.x ? p1 : p2);
     }
     else polygon.push_back(p1);
     // izquierda
     p1 = {bb.x_low, (int)random2(rng)};
     if (n == 2) {
         p2 = {bb.x_low, (int)random2(rng)};
-        polygon.push_back(p1.x < p2.x ? p1 : p2);
-        polygon.push_back(p1.x < p2.x ? p2 : p1);
+        polygon.push_back(p1.y < p2.y ? p2 : p1);
+        polygon.push_back(p1.y < p2.y ? p1 : p2);
     }
     else polygon.push_back(p1);
-    polygon.push_back(start);
     return polygon;
 }
 
@@ -119,15 +112,24 @@ void testOverlap() {
     doc.SetColumnName(0, "n");
     doc.SetColumnName(1, "overlap");
     vector<Rect> rects;
+    const int testSize = 1111;
+    const int iterations = 10;
     auto polygon = generatePolygon(1000, 1000);
     rects.push_back(getBoundingBox(polygon));
-    vector<double> row = {0,0};
-    doc.InsertRow(0, row);
-    for (int i = 1; i < 1111; i++) {
+    vector<double> overlaps(testSize, 0);
+    for (int k = 0; k < iterations; k++) {
+        for (int i = 1; i < overlaps.size(); i++) {
+            polygon = generatePolygon(1000, 1000);
+            rects.push_back(getBoundingBox(polygon));
+            auto currentOverlap = getTotalOverlap(rects);
+            overlaps[i] += currentOverlap;
+        }
+        rects.clear();
         polygon = generatePolygon(1000, 1000);
         rects.push_back(getBoundingBox(polygon));
-        auto currentOverlap = getTotalOverlap(rects);
-        doc.InsertRow<double>(i, {(double)i, currentOverlap});
+    }
+    for (int i = 0; i < overlaps.size(); i++) {
+        doc.InsertRow<double>(i, {(double)i+1, overlaps[i] / iterations});
     }
     doc.Save("../output/overlap.csv");
 }
@@ -139,7 +141,7 @@ void testInsert(Tree &tree) {
     for (int i = 0; i < 500; i++) {
         auto t1 = chrono::high_resolution_clock::now();
         for (int j =0; j < 10; j++) {
-            auto polygon = generatePolygon(1000, 1000);
+            auto polygon = generatePolygon(720, 720);
             tree.insert(polygon);
         }
         auto t2 = chrono::high_resolution_clock::now();
