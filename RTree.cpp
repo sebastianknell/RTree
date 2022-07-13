@@ -671,3 +671,8 @@ static void showNode(Node* node, cv::InputOutputArray &img) {
 void RTree::show(cv::InputOutputArray &img) {
     showNode(root, img);
 }
+
+void RTree::clear() {
+    delete root;
+    root = nullptr;
+}

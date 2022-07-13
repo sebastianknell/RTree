@@ -21,6 +21,7 @@ public:
     virtual void search(const Data&) = 0;
     virtual void insert(const Data&) = 0;
     virtual void remove(const Data&) = 0;
+    virtual void clear() = 0;
 };
 
 extern int radius;

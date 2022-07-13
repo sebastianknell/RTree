@@ -54,6 +54,7 @@ public:
     vector<knnResult> depthFirst(Point, int);
     void useCircles();
     void show(cv::InputOutputArray &);
+    void clear() override;
 };
 
 

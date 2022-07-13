@@ -11,7 +11,7 @@
 #include "rapidcsv.h"
 
 bool isOverlapping(Rect, Rect);
-double getOverlap(Rect, Rect);
+int getOverlap(Rect, Rect);
 double getTotalOverlap(vector<Rect>&);
 Data generatePolygon(int, int);
 void testOverlap();

@@ -15,42 +15,24 @@ bool isOverlapping(Rect r1, Rect r2){
     return true;
 }
 
-double getOverlap(Rect r1, Rect r2) {
-    double Ix, Iy, R1x, R1y, R2x, R2y;
-    R1x = r1.x_high - r1.x_low;
-    R1y = r1.y_high - r1.y_low;
-
-    R2x = r2.x_high - r2.x_low;
-    R2y = r2.y_high - r2.y_low;
-
-    if (min(r1.x_high,r2.x_high)==r1.x_high)  // min(x1a,x1b) = x1a
-        Ix = max(0, r1.x_low - r2.x_high);   // max(0, x2a-x1b)
-    else
-        Ix = max(0, r2.x_low - r1.x_high);
-
-    if (min(r1.y_high,r2.y_high)==r1.y_high)  // min(y1a,y1b) = y1a
-        Iy = max(0, r1.y_low - r2.y_high);   // max(0, y2a-y1b)
-    else
-        Iy = max(0, r2.y_low - r1.y_high);
-
-
-    double coef = (Ix * Iy) / (R1x * R1y);
-
-    return coef;
+int getOverlap(Rect r1, Rect r2) {
+    auto lx = max(0, min(r1.x_high, r2.x_high) - max(r1.x_low, r2.x_low));
+    auto ly = max(0, min(r1.y_high, r2.y_high) - max(r1.y_low, r2.y_low));
+    return lx * ly;
 }
 
 double getTotalOverlap(vector<Rect> &rects) {
-    double intersection = 0.0;
-    double total = 0.0;
+    int intersection = 0;
+    int total = 0;
     for (int i = 0; i < rects.size(); i++) {
         for (int j = i+1; j < rects.size(); j++) {
-            auto overlap = getOverlap(rects[i], rects[j]);
-            auto S = getArea(rects[i]) + getArea(rects[j]) - overlap;
+            int overlap = getOverlap(rects[i], rects[j]);
+            int S = getArea(rects[i]) + getArea(rects[j]) - overlap;
             intersection += overlap;
             total += S;
         }
     }
-    return intersection / total;
+    return (double) intersection / total;
 }
 
 Data generatePolygon(int gridWidth, int gridHeight) {
@@ -114,18 +96,19 @@ void testOverlap() {
     vector<Rect> rects;
     const int testSize = 1111;
     const int iterations = 10;
-    auto polygon = generatePolygon(1000, 1000);
+    const int gridSize = 1000;
+    auto polygon = generatePolygon(gridSize, gridSize);
     rects.push_back(getBoundingBox(polygon));
     vector<double> overlaps(testSize, 0);
     for (int k = 0; k < iterations; k++) {
         for (int i = 1; i < overlaps.size(); i++) {
-            polygon = generatePolygon(1000, 1000);
+            polygon = generatePolygon(gridSize, gridSize);
             rects.push_back(getBoundingBox(polygon));
             auto currentOverlap = getTotalOverlap(rects);
             overlaps[i] += currentOverlap;
         }
         rects.clear();
-        polygon = generatePolygon(1000, 1000);
+        polygon = generatePolygon(gridSize, gridSize);
         rects.push_back(getBoundingBox(polygon));
     }
     for (int i = 0; i < overlaps.size(); i++) {
@@ -138,15 +121,23 @@ void testInsert(Tree &tree) {
     rapidcsv::Document doc;
     doc.SetColumnName(0, "n");
     doc.SetColumnName(1, "time");
-    for (int i = 0; i < 500; i++) {
-        auto t1 = chrono::high_resolution_clock::now();
-        for (int j =0; j < 10; j++) {
-            auto polygon = generatePolygon(720, 720);
-            tree.insert(polygon);
+    vector<long> times(500, 0);
+    const int iterations = 100;
+    for (int k = 0; k < iterations; k++) {
+        for (int i = 0; i < 500; i++) {
+            auto t1 = chrono::high_resolution_clock::now();
+            for (int j =0; j < 10; j++) {
+                auto polygon = generatePolygon(720, 720);
+                tree.insert(polygon);
+            }
+            auto t2 = chrono::high_resolution_clock::now();
+            auto duration = chrono::duration_cast<chrono::microseconds>(t2-t1).count();
+            times[i] += duration;
         }
-        auto t2 = chrono::high_resolution_clock::now();
-        long duration = chrono::duration_cast<chrono::microseconds>(t2-t1).count();
-        doc.InsertRow<long>(i, {(i+1)*10, duration});
+        tree.clear();
+    }
+    for (int i = 0; i < times.size(); i++) {
+        doc.InsertRow<double>(i, {(double)(i+1)*10, (double)times[i] / iterations});
     }
     doc.Save("../output/insert.csv");
 }
