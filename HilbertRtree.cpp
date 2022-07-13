@@ -285,16 +285,16 @@ bool operator==(Data data1, Data data2) {
     return true;
 }
 
-bool HilbertRtree::search(const Data obj) {
+pair<int, HilbertNode*> HilbertRtree::search(const Data obj) {
     auto R = getBoundingBox(obj);
     auto h = getHilbertIndex(getCenter(R));
 
     HilbertNode* node = chooseLeaf(root, h);
     for (int i=0; i<node->data.size(); i++)
         if (node->data[i].data == obj)
-            return true;    
+            return make_pair(i, node);    
 
-    return false;
+    return make_pair(-1, nullptr);
 }
 
 static lineToH getDistanceToSegment(Point p, Point a, Point b) {
@@ -371,23 +371,150 @@ vector<knnResultH> HilbertRtree::knn(Point p, int k) {
 
 /////////////////////////////////////////////////////////////////////////
 
-void HilbertRtree::handleUnderflow(HilbertNode* node) {
-    HilbertNode* p = node->parent;
+void HilbertRtree::handleUnderflow(HilbertNode* v) {
+    HilbertNode* p = v->parent;
     vector<HilbertNode*> S;
 
+    // agrego los que no son v (izq -> der)
+    for (auto x : p->children) {
+        if (x != v)
+            S.push_back(x);
+        else
+            break;
+    }
 
-    ;
+    S.push_back(v);
+    
+    // pasar las entradas de todos los nodos en S a C ordenadas por LHV
+    priority_queue<Entry, vector<Entry>, greater<vector<Entry>::value_type>> C;
+    for (auto node : S) {
+        Entry e;
+        if (node->isLeaf) {
+            for (auto entry : node->data) {
+                e.type = 0;
+                e.data = entry;
+                e.rect = getBoundingBox(entry.data);
+                // las regiones en los nodos hoja son los bounding boxes
+                C.push(e);
+            }
+        } else {
+            for (auto entry : node->children) {
+                e.type = 1;
+                e.child = entry;
+                e.rect = entry->rect;
+                //getBoundingRect(entry->regions);   // capaz es innecesario
+                C.push(e);
+            }
+        }
+    }
+
+    // si todos los nodos en S tienen underflow...
+    if (S.size()*m > C.size()) {
+        // actualizar lista children del padre
+        // auto it = S.begin();
+        for (int i=0; i< S[0]->parent->children.size(); i++) {
+            if (S[0]->parent->children[i] == S[0]) {
+                auto it = S[0]->parent->children.begin() + i;
+                auto it2 = S[0]->parent->regions.begin() + i;
+                S[0]->parent->children.erase(it);
+                S[0]->parent->regions.erase(it2);
+                break;
+            }
+        }
+        // eliminar el nodo de S
+        S.erase(S.begin());
+    }
+    
+    int q = C.size() / S.size();
+    for (int i = 0; i < S.size()-1; i++) {
+        HilbertNode* currNode = S[i];
+        if (currNode->isLeaf) currNode->data.clear();
+        else currNode->children.clear();
+        
+        /* empiezan cambios */
+        currNode->regions.clear();
+        /* terminan cambios */
+
+        for (int j = 0; j < q; j++) {
+            if (currNode->isLeaf) {
+                currNode->data.push_back(C.top().data);
+            } else {
+                currNode->children.push_back(C.top().child);
+                currNode->children[j]->parent = currNode;
+            }
+            /* empiezan cambios */
+            currNode->regions.push_back(C.top().rect);
+            /* terminan cambios */
+            C.pop();
+        }
+        // actualizar currNode
+        //currNode->updateBoundingBox();
+        
+        currNode->updateLHV();
+        // actualizando los bounding rects de los nodos hoja
+        currNode->rect = getBoundingRect(currNode->regions);
+    }
+
+    // agregar elementos excedentes al ultimo nodo
+    HilbertNode* lastNode = S[S.size()-1];
+    if (lastNode->isLeaf) lastNode->data.clear();
+    else lastNode->children.clear();
+    lastNode->regions.clear();
+    
+    int it = C.size();
+    for (int i = 0; i < it; i++) {
+        if (lastNode->isLeaf) {
+            lastNode->data.push_back(C.top().data);
+        } else {
+            lastNode->children.push_back(C.top().child);
+            lastNode->children[i]->parent = lastNode;
+        }
+        /* empiezan cambios */
+        lastNode->regions.push_back(C.top().rect);
+        /* terminan cambios */
+        C.pop();
+    }
+    //lastNode->updateBoundingBox();
+    lastNode->updateLHV();
+    // actualizando el bounding rect del lastNode
+    lastNode->rect = getBoundingRect(lastNode->regions);
+
+    // actualizando el vector de regions de el nodo padre
+    p->regions.clear();
+    for (auto child : p->children)
+        p->regions.push_back(child->rect);
+    
+    // actualizando el bounding rect del padre
+    p->rect = getBoundingRect(p->regions);
+    adjustTree(p);
+
+    if (p->children.size() < m) handleUnderflow(p);
 }
 
-void HilbertRtree::remove(const Data obj, int type) {
-    /* Rect window_q = {q.x, q.y, q.x, q.y};
+void HilbertRtree::remove(const Data obj) {
+    auto n = search(obj);
+    if (n.first == -1) return;
+
+    HilbertNode* node = n.second;
+    auto it = node->data.begin() + n.first;
+    auto it2 = node->regions.begin() + n.first;
+
+    node->data.erase(it);
+    node->regions.erase(it2);
+
+    if (node->data.size() < m) handleUnderflow(node);
+
+    adjustTree(node);
+}
+
+/* Rect window_q = {q.x, q.y, q.x, q.y};
 
     // encontrar la hoja v que puede contener la data
     HilbertNode* v = findLeaf(root, window_q);
     if (v == nullptr) {
         cout << "Object was not found" << endl;
         return;
-    }; 
+    };
 
     // recorrer v y borrar la data si se encuentra
     bool found = false;
@@ -406,7 +533,6 @@ void HilbertRtree::remove(const Data obj, int type) {
 
     if (v->data.size() < m) handleUnderflow(v);
     adjustTree(v); */
-}
 
 /////////////////////////////////////////////////////////////////////////
 

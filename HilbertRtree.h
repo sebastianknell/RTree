@@ -61,8 +61,8 @@ public:
         this->root = new HilbertNode(true);
     }
     void insert(const Data);
-    void remove(const Data, int type = 1);
-    bool search(const Data);
+    void remove(const Data);
+    pair<int, HilbertNode*> search(const Data);
     vector<knnResultH> knn(Point, int);
     void adjustTree(HilbertNode*);
     HilbertNode* chooseLeaf(HilbertNode*, int);

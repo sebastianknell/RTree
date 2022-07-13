@@ -159,24 +159,38 @@ int main() {
     */
 
 // caso de falla:
-/*
+
     hrt->insert({{376, 196}});
     hrt->insert({{630, 274}});
     hrt->insert({{515, 367}});
     hrt->insert({{236, 295}});
-    // entra
     hrt->insert({{447, 114}});
     hrt->insert({{758, 273}});
-    // entra
     hrt->insert({{525, 489}});
-    // entra
     hrt->insert({{184, 286}});
     hrt->insert({{539, 54}});
-    // entra
     hrt->insert({{857, 272}});
-*/
 
-    hrt->showHilbert(img);
+    cout << (hrt->search({{376, 196}}).first != -1);
+    cout << (hrt->search({{630, 274}}).first != -1);
+    cout << (hrt->search({{515, 367}}).first != -1);
+    cout << (hrt->search({{236, 295}}).first != -1);
+    cout << (hrt->search({{447, 114}}).first != -1);
+    cout << (hrt->search({{758, 273}}).first != -1);
+    cout << (hrt->search({{525, 489}}).first != -1);
+    cout << (hrt->search({{184, 286}}).first != -1);
+    cout << (hrt->search({{857, 272}}).first != -1) << endl;
+
+    hrt->remove({{515, 367}});
+    hrt->remove({{758, 273}});
+    hrt->remove({{184, 286}});
+
+    cout << (hrt->search({{515, 367}}).first != -1);
+    cout << (hrt->search({{758, 273}}).first != -1);
+    cout << (hrt->search({{184, 286}}).first != -1);
+
+
+    /* hrt->showHilbert(img);
     cv::imshow(windowName, img);
     cv::waitKey(1);
 
@@ -185,7 +199,7 @@ int main() {
     char c;
     do {
         c = (char)cv::waitKey(0);
-    } while (c != 'q');
+    } while (c != 'q'); */
 
     
     // hrt->insert({{80, 100}});
