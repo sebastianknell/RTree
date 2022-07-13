@@ -52,13 +52,13 @@ static void clickHandler2(int event, int x, int y, int flags, void*) {
         cv::imshow(windowName, img);
     }
     else if (event == cv::EVENT_MOUSEMOVE) {
-        if (!drawing /*&& !hrt->isEmpty()*/) {
+        if (!drawing && !hrt->isEmpty()) {
             img.setTo(cv::Scalar(255, 255, 255));
             hrt->showHilbert(img);
 //            auto nns = rtree.depthFirst({x, y}, 3);
             auto nns = hrt->knn({x, y}, 3);
             for (auto nn : nns) {
-                cv::line(img, {x, y}, nn.p, {0, 0, 0}, 1);
+               // cv::line(img, {x, y}, nn.p, {0, 0, 0}, 1);
                 if (nn.node->data[nn.index].data.size() == 1)
                     cv::circle(img, nn.node->data[nn.index].data.back(), radius, colors[5], -1);
                 else cv::polylines(img, nn.node->data[nn.index].data, true, colors[5], 2);
@@ -110,15 +110,15 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
         if (!drawing && !rtree.isEmpty()) {
             img.setTo(cv::Scalar(255, 255, 255));
             rtree.show(img);
-//            auto nns = rtree.depthFirst({x, y}, 3);
-//             auto nns = rtree.knn({x, y}, 3);
-//             for (auto nn : nns) {
-//                cv::line(img, {x, y}, nn.p, {0, 0, 0}, 1);
-//                 if (nn.node->data[nn.index]->size() == 1)
-//                     cv::circle(img, nn.node->data[nn.index]->back(), radius, colors[5], -1);
-//                 else cv::polylines(img, *nn.node->data[nn.index], true, colors[5], 2);
-//             }
-//             cv::imshow(windowName, img);
+            //auto nns = rtree.depthFirst({x, y}, 3);
+            auto nns = rtree.knn({x, y}, 3);
+            for (auto nn : nns) {
+                //cv::line(img, {x, y}, nn.p, {0, 0, 0}, 1);
+                if (nn.node->data[nn.index]->size() == 1)
+                    cv::circle(img, nn.node->data[nn.index]->back(), radius, colors[5], -1);
+                else cv::polylines(img, *nn.node->data[nn.index], true, colors[5], 2);
+            }
+            cv::imshow(windowName, img);
         }
     }
 }
@@ -159,8 +159,8 @@ int main() {
     */
 
 // caso de falla:
-/*
-    hrt->insert({{376, 196}});
+
+    /* hrt->insert({{376, 196}});
     hrt->insert({{630, 274}});
     hrt->insert({{515, 367}});
     hrt->insert({{236, 295}});
@@ -187,14 +187,14 @@ int main() {
 
     cout << (hrt->search({{515, 367}}).first != -1);
     cout << (hrt->search({{758, 273}}).first != -1);
-    cout << (hrt->search({{184, 286}}).first != -1);
-*/
+    cout << (hrt->search({{184, 286}}).first != -1); */
+
 
     hrt->showHilbert(img);
     cv::imshow(windowName, img);
     cv::waitKey(1);
 
-    cv::setMouseCallback(windowName, clickHandler2);
+    cv::setMouseCallback(windowName, clickHandler);
 
     char c;
     do {

@@ -4,17 +4,6 @@
 
 #include "HilbertRtree.h"
 
-/*static void addRegion(Node* node, Rect region) {
-    if (node->regions.empty()) node->rect = region;
-    else {
-        node->rect.x_low = min(node->rect.x_low, region.x_low);
-        node->rect.x_high = max(node->rect.x_high, region.x_high);
-        node->rect.y_low = min(node->rect.y_low, region.y_low);
-        node->rect.y_high = max(node->rect.y_high, region.y_high);
-    }
-    node->regions.push_back(region);
-}*/
-
 static int getHilbertIndexRec(Point p, int x, int y, int xi, int xj, int yi, int yj, int n, int index) {
     // Ver en que cuadrante esta
     // Cuadrante 1
@@ -86,7 +75,7 @@ void HilbertRtree::handleOverflow(HilbertNode* v) {
     p->lvl = v->lvl+1;
     vector<HilbertNode*> S;
 
-    // agrego los que no son v (izq -> der)
+    // agrego hermanos cooperantes (izq -> der)
     for (auto x : p->children) {
         if (x != v)
             S.push_back(x);
@@ -383,16 +372,17 @@ void HilbertRtree::handleUnderflow(HilbertNode* v) {
     HilbertNode* p = v->parent;
     vector<HilbertNode*> S;
 
-    // agrego los que no son v (izq -> der)
+    // agrego hermanos cooperantes (izq -> der), si 
     for (auto x : p->children) {
         if (x != v)
             S.push_back(x);
-        else
+        else {
+            S.push_back(v);
+            if (S.size() == 1) continue;
             break;
+        }
     }
 
-    S.push_back(v);
-    
     // pasar las entradas de todos los nodos en S a C ordenadas por LHV
     priority_queue<Entry, vector<Entry>, greater<vector<Entry>::value_type>> C;
     for (auto node : S) {
@@ -496,20 +486,58 @@ void HilbertRtree::handleUnderflow(HilbertNode* v) {
     p->rect = getBoundingRect(p->regions);
     adjustTree(p);
 
+    /* if (p->children.size() < m) {
+        if (p == root) {    // root && leaf, root notLeaf
+            //root = root->children[0];
+            
+            // hijos del padre son hojas, el padre se vuelve hoja
 
-    if (p->children.size() == m && p == root) {
-        root = root->children[0];
-        root->parent = nullptr;
+            
+            * si es root y hoja y se eliminan nodos, sí o sí va a quedar el caso de 1 solo hijo pq el root puede tener menos del minimo
+            * si es hoja y no es root, va a juntarse con su hermano e hipoteticamente llegará al caso en el que haya menos de "m"
+            en ese caso, (suponiendo que sean 5-10), el sgt nodo arriba se queda con 4 hijos, por lo que como no puede pasar esto, si el sgt nodo es el root
+            y el root es el único que puede tener menos de m, este nodo se vuelve el root, si no es el root, necesariamente debe tener un hermano a la izquierda o
+            a la derecha, asi que se junta con ese hermano.
+            
+            
+            if (p->children[0]->isLeaf) {
+                p->isLeaf = true;
+                p->data.clear();
+                p->regions.clear();
+                for (auto x : p->children) {
+                    p->data.push_back(x->data);
+                    p->regions.push_back(getBoundingBox(x.data));
+                }
+            } else {    // hijos del padre no son hoja
+                p->isLeaf = true;
+                p->children.clear();
+                p->regions.clear();
+                for (int i=0; i<p->children.size(); i++) {
+                    p->children.push_back(p->children[i]);
+                    p->regions.push_back(p->children[i]->rect);
+                }
+            }
+            
+            root->parent = nullptr;
+        } else {
+            p = p->children[0];
+        }
+    } */
+
+    if (p->children.size() < m && p != root) {
+        handleUnderflow(p);
     }
 
-    if (p->children.size() < m) {
-        handleUnderflow(p);
+    if (p == root && p->children.size() == 1) {
+        root = p->children[0];
     }
 }
 
 void HilbertRtree::remove(const Data obj) {
     auto n = search(obj);
-    if (n.first == -1) return;
+    if (n.first == -1) {
+        return;
+    }
 
     HilbertNode* node = n.second;
     auto it = node->data.begin() + n.first;
@@ -524,35 +552,7 @@ void HilbertRtree::remove(const Data obj) {
         adjustTree(node);
 }
 
-/* Rect window_q = {q.x, q.y, q.x, q.y};
-
-    // encontrar la hoja v que puede contener la data
-    HilbertNode* v = findLeaf(root, window_q);
-    if (v == nullptr) {
-        cout << "Object was not found" << endl;
-        return;
-    };
-
-    // recorrer v y borrar la data si se encuentra
-    bool found = false;
-    for (auto it = v->data.begin(); it != v->data.end();) {
-        if () {
-            it = v->data.erase(it);
-            found = true;
-            break;
-        }
-    }
-
-    if (!found) {
-        cout << "Object was not found" << endl;
-        return;
-    } 
-
-    if (v->data.size() < m) handleUnderflow(v);
-    adjustTree(v); */
-
 /////////////////////////////////////////////////////////////////////////
-
 
 int colorIdx2 = 0;
 

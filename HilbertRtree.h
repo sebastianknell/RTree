@@ -56,7 +56,8 @@ class HilbertRtree {
     HilbertNode* root;
     int getHilbertIndex(Point);
 public:
-    HilbertRtree(int gridW, int gridH, int M = 3, int m = 1) : gridWidth(gridW), gridHeight(gridH), M(M), m(m) {
+    HilbertRtree(int gridW, int gridH, int M = 3, int m = 2) : gridWidth(gridW), gridHeight(gridH), M(M), m(m) {
+        assert(m <= M/2 + 1);
         this->levels = 3;
         this->root = new HilbertNode(true);
     }
@@ -69,6 +70,7 @@ public:
     void handleOverflow(HilbertNode*);
     void handleUnderflow(HilbertNode*);
     void showHilbert(cv::InputOutputArray&);
+    bool isEmpty() { return root == nullptr; };
 };
 
 
