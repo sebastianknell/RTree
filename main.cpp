@@ -51,21 +51,21 @@ static void clickHandler2(int event, int x, int y, int flags, void*) {
         hrt->showHilbert(img);
         cv::imshow(windowName, img);
     }
-    /*else if (event == cv::EVENT_MOUSEMOVE) {
-        if (!drawing && !rtree.isEmpty()) {
+    else if (event == cv::EVENT_MOUSEMOVE) {
+        if (!drawing /*&& !hrt->isEmpty()*/) {
             img.setTo(cv::Scalar(255, 255, 255));
-            rtree.show(img);
+            hrt->showHilbert(img);
 //            auto nns = rtree.depthFirst({x, y}, 3);
-            auto nns = rtree.knn({x, y}, 3);
+            auto nns = hrt->knn({x, y}, 3);
             for (auto nn : nns) {
 //                cv::line(img, {x, y}, nn.p, {0, 0, 0}, 1);
-                if (nn.node->data[nn.index]->size() == 1)
-                    cv::circle(img, nn.node->data[nn.index]->back(), radius, colors[5], -1);
-                else cv::polylines(img, *nn.node->data[nn.index], true, colors[5], 2);
+                if (nn.node->data[nn.index].data.size() == 1)
+                    cv::circle(img, nn.node->data[nn.index].data.back(), radius, colors[5], -1);
+                else cv::polylines(img, nn.node->data[nn.index].data, true, colors[5], 2);
             }
             cv::imshow(windowName, img);
         }
-    }*/
+    }
 }
 
 static void clickHandler(int event, int x, int y, int flags, void*) {
@@ -170,7 +170,7 @@ int main() {
         c = (char)cv::waitKey(0);
     } while (c != 'q');
 
-    ;
+    
     // hrt->insert({{80, 100}});
     // hrt->useCircles();
     return 0;

@@ -78,8 +78,8 @@ void HilbertRtree::handleOverflow(HilbertNode* v) {
         newRoot->rect = v->rect;
         newRoot->lhv = v->lhv;
         // hacer que v se vuelva hijo de root
-        root->parent = newRoot;
-        newRoot->children.push_back(root);
+        v->parent = newRoot;
+        newRoot->children.push_back(v);
         root = newRoot;
     }
     HilbertNode* p = v->parent;
@@ -100,19 +100,19 @@ void HilbertRtree::handleOverflow(HilbertNode* v) {
     for (auto node : S) {
         Entry e;
         if (node->isLeaf) {
-            int idx = 0;
             for (auto entry : node->data) {
                 e.type = 0;
                 e.data = entry;
-                // e.rect = node->regions[idx++];
                 e.rect = getBoundingBox(entry.data);
+                // las regiones en los nodos hoja son los bounding boxes
                 C.push(e);
             }
         } else {
             for (auto entry : node->children) {
                 e.type = 1;
                 e.child = entry;
-                e.rect = getBoundingRect(entry->regions);   // capaz es innecesario
+                e.rect = entry->rect;
+                //getBoundingRect(entry->regions);   // capaz es innecesario
                 C.push(e);
             }
         }
@@ -120,13 +120,13 @@ void HilbertRtree::handleOverflow(HilbertNode* v) {
 
     // si todos los nodos en S tienen overflow...
     if (S.size()*M < C.size()) {
-        HilbertNode* w = new HilbertNode(S[0]->isLeaf);
+        HilbertNode* w = new HilbertNode(v->isLeaf);
         w->parent = p;
         p->children.insert(p->children.begin(), w);
         S.insert(S.begin(), w);
     }
 
-    int q = C.size() / S.size();    // q=2
+    int q = C.size() / S.size();
     for (int i = 0; i < S.size()-1; i++) {
         HilbertNode* currNode = S[i];
         if (currNode->isLeaf) currNode->data.clear();
@@ -175,7 +175,7 @@ void HilbertRtree::handleOverflow(HilbertNode* v) {
     }
     //lastNode->updateBoundingBox();
     lastNode->updateLHV();
-    // actualizando los bounding rects del lasstNode
+    // actualizando el bounding rect del lastNode
     lastNode->rect = getBoundingRect(lastNode->regions);
 
     // actualizando el vector de regions de el nodo padre
@@ -183,12 +183,6 @@ void HilbertRtree::handleOverflow(HilbertNode* v) {
     for (auto child : p->children)
         p->regions.push_back(child->rect);
     
-    /*
-    for (int i=0; i<p->regions.size(); i++) {
-        p->regions[i] = getBoundingRect(p->children[i]->regions);
-    }
-    */
-
     // actualizando el bounding rect del padre
     p->rect = getBoundingRect(p->regions);
     adjustTree(p);
@@ -227,13 +221,20 @@ void HilbertNode::updateLHV() {
 // creo que si se podria pasar un puntero NN si es que se hizo split aquí
 void HilbertRtree::adjustTree(HilbertNode* node) { //, Node* NN
     // node->updateBoundingBox();
+    if (node->isLeaf) {
+        for (int i=0; i<node->data.size(); i++) {
+            node->regions[i] = getBoundingBox(node->data[i].data);
+        }
+    }
     node->rect = getBoundingRect(node->regions);
-    
     node->updateLHV();
 
-    if (node != root) { 
-        for (int i=0; i<node->parent->regions.size(); i++) {
-            node->parent->regions[i] = getBoundingRect(node->parent->children[i]->regions);
+    if ( /*node != root*/ node->parent != nullptr) {
+        node->parent->regions.clear();
+        for (int i=0; i<node->parent->children.size(); i++) {
+            // node->parent->regions[i] = node->parent->children[i]->rect;
+            node->parent->regions.push_back(node->parent->children[i]->rect);
+            // node->parent->regions[i] = getBoundingRect(node->parent->children[i]->regions);
         }
         adjustTree(node->parent);
     }
@@ -263,7 +264,7 @@ void HilbertRtree::insert(const Data obj) {
     node->insertOrdered(hd, R);
 
     if (node->data.size() > M) {
-        cout << "ENTRA" << endl;
+        cout << "---------- ENTRA: ----------" << endl;
         handleOverflow(node);
     }
 
@@ -276,6 +277,16 @@ void HilbertRtree::insert(const Data obj) {
 
 /////////////////////////////////////////////////////////////////////////
 
+bool operator==(Data data1, Data data2) {
+    if (data1.size() != data2.size()) return false;
+
+    for (int i=0; i<data1.size(); i++)
+        if (data1[i] != data2[i])
+            return false;
+    
+    return true;
+}
+
 bool HilbertRtree::search(const Data obj) {
     // como la data es la misma se puede buscar con el indice de hilbert
 
@@ -283,22 +294,95 @@ bool HilbertRtree::search(const Data obj) {
     auto h = getHilbertIndex(getCenter(R));
 
     // TODO
+    HilbertNode* node = chooseLeaf(root, h);
+    for (int i=0; i<node->data.size(); i++)
+        if (node->data[i].data == obj)
+            return true;    
 
     return false;
 }
 
-vector<Data> knn(const Point) {
-    // como no necesariamente se busca el objeto en el mismo punto de consulta,
-    // se tiene que buscar en todas las regiones que intersequen
-    
-    vector<Data> v;
-    return v;
+static lineToH getDistanceToSegment(Point p, Point a, Point b) {
+    auto dot = [](Point a, Point b) -> double {
+        return a.x * b.x + a.y * b.y;
+    };
+    auto norm = [](Point p) -> double {
+        return sqrt(pow(p.x, 2) + pow(p.y, 2));
+    };
+    auto ab = b - a;
+    auto bp = p - b;
+    auto ap = p - a;
+
+    if (dot(ab, ap) < 0) {
+        return {a, norm(ap)};
+    }
+    if (dot(ab, bp) > 0) {
+        return {b, norm(bp)};
+    }
+    else {
+        auto d = abs(ab.x * ap.y - ab.y * ap.x) / norm(ab);
+        auto t = dot(ap, ab) / dot(ab, ab);
+        Point point = {int(a.x + ab.x*t), int(a.y + ab.y*t)};
+        return {point, d};
+    }
+}
+
+static lineToH getDistance(Point p, Data *data) {
+    if (data->size() == 1) return {data->front(), getDistance(p, data->front())};
+    data->push_back(data->front());
+    lineToH min = {{}, INT_MAX};
+    for (int i = 0; i < data->size() - 1; i++) {
+        auto distanceToSide = getDistanceToSegment(p, data->at(i), data->at(i+1));
+        if (distanceToSide.distance < min.distance) min = distanceToSide;
+    }
+    return min;
+}
+
+vector<knnResultH> HilbertRtree::knn(Point p, int k) {
+    using distance = struct {HilbertNode* node; int index; double distance; Point p;};
+    auto cmp = [](distance a, distance b) {
+        return a.distance > b.distance;
+    };
+    priority_queue<distance, vector<distance>, decltype(cmp)> nodes(cmp);
+    vector<knnResultH> knn;
+    for (int i = 0; i < root->regions.size(); i++)
+        if (!root->isLeaf)
+            nodes.push({root, i, getDistance(p, root->regions[i])});
+        else {
+            auto line = getDistance(p, &root->data[i].data);
+            nodes.push({root, i, line.distance, line.p});
+        }
+
+    while (!nodes.empty() && knn.size() < k) {
+        auto curr = nodes.top();
+        nodes.pop();
+        if (!curr.node->isLeaf) {
+            auto child = curr.node->children[curr.index];
+            for (int i = 0; i < child->regions.size(); i++) {
+                if (!child->isLeaf)
+                    nodes.push({child, i, getDistance(p, child->regions[i])});
+                else {
+                    auto line = getDistance(p, &child->data[i].data);
+                    nodes.push({child, i, line.distance, line.p});
+                }
+            }
+        }
+        else {
+            knn.push_back({curr.node, curr.index, curr.p});
+        }
+    }
+    return knn;
 }
 
 /////////////////////////////////////////////////////////////////////////
 
 void HilbertRtree::handleUnderflow(HilbertNode* node) {
+    HilbertNode* p = node->parent;
+    vector<HilbertNode*> S;
 
+    ;
+
+    ;
 }
 
 void HilbertRtree::remove(const Data obj, int type) {
@@ -312,7 +396,7 @@ void HilbertRtree::remove(const Data obj, int type) {
     }; 
 
     // recorrer v y borrar la data si se encuentra
-     bool found = false;
+    bool found = false;
     for (auto it = v->data.begin(); it != v->data.end();) {
         if () {
             it = v->data.erase(it);

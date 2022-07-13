@@ -37,10 +37,14 @@ struct HilbertNode {
     void updateLHV();
 };
 
+using lineToH = struct {Point p; double distance;};
+struct knnResultH {HilbertNode* node; int index; Point p;};
+
 struct Entry {
     bool type;  // 0 = data, 1 = child
     HData data;
     Rect rect;  // rectangulo asociado a la data
+
     HilbertNode* child;
 
     Entry() {}
@@ -53,13 +57,13 @@ class HilbertRtree {
     int getHilbertIndex(Point);
 public:
     HilbertRtree(int gridW, int gridH, int M = 3, int m = 1) : gridWidth(gridW), gridHeight(gridH), M(M), m(m) {
-        this->levels = 9;
+        this->levels = 3;
         this->root = new HilbertNode(true);
     }
     void insert(const Data);
     void remove(const Data, int type = 1);
     bool search(const Data);
-    vector<Data> knn(const Point);
+    vector<knnResultH> knn(Point, int);
     void adjustTree(HilbertNode*);
     HilbertNode* chooseLeaf(HilbertNode*, int);
     void handleOverflow(HilbertNode*);
