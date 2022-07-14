@@ -326,6 +326,28 @@ void RTree::reinsert(){
     }
 }
 
+static bool checkSubtree(Node* node) {
+    if (!(node->rect == getBoundingRect(node->regions))) return false;
+    if (node->isLeaf) {
+        if (node->level != 0) return false;
+        if (!node->childs.empty()) return false;
+        if (node->regions.size() < 2 || node->data.size() < 2) return false;
+        if (node->regions.size() > 3 || node->data.size() > 3) return false;
+        return true;
+    }
+    if (!node->data.empty()) return false;
+    if (node->regions.size() < 2 || node->childs.size() < 2) return false;
+    if (node->regions.size() > 3 || node->childs.size() > 3) return false;
+    for (auto &c : node->childs) {
+        if (c->level != node->level - 1) return false;
+    }
+    bool isValid = true;
+    for (auto &c : node->childs) {
+        isValid = isValid && checkSubtree(c);
+    }
+    return isValid;
+}
+
 void RTree::reinsert2(queue<Node*> &nodes) {
     while(!nodes.empty()) {
         auto nodeToInsert = nodes.front();
@@ -349,28 +371,9 @@ void RTree::reinsert2(queue<Node*> &nodes) {
             adjustTree(curr, parents);
         }
     }
-}
-
-static bool checkSubtree(Node* node) {
-    if (!(node->rect == getBoundingRect(node->regions))) return false;
-    if (node->isLeaf) {
-        if (node->level != 0) return false;
-        if (!node->childs.empty()) return false;
-        if (node->regions.size() < 2 || node->data.size() < 2) return false;
-        if (node->regions.size() > 3 || node->data.size() > 3) return false;
-        return true;
+    if (checkSubtree(root)) {
+        cout << "algo esta mal" << endl;
     }
-    if (!node->data.empty()) return false;
-    if (node->regions.size() < 2 || node->childs.size() < 2) return false;
-    if (node->regions.size() > 3 || node->childs.size() > 3) return false;
-    for (auto &c : node->childs) {
-        if (c->level != node->level - 1) return false;
-    }
-    bool isValid = true;
-    for (auto &c : node->childs) {
-        isValid = isValid && checkSubtree(c);
-    }
-    return isValid;
 }
 
 void RTree::remove(const Data &data) {

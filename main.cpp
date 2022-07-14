@@ -1,9 +1,6 @@
 #include "RTree.h"
-<<<<<<< HEAD
 #include "lib/testing.h"
-=======
 #include "HilbertRtree.h"
->>>>>>> dev-hilbert
 
 using namespace std;
 
@@ -129,9 +126,9 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
 }
 
 int main() {
-//    testInsert(rtree);
+    testInsert(rtree);
 //    testSearch(rtree);
-    testRemove(rtree);
+//    testRemove(rtree);
 //    testOverlap();
 //    rtree.show(img);
 //    cv::imshow(windowName, img);

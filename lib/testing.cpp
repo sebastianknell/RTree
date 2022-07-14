@@ -38,7 +38,7 @@ double getTotalOverlap(vector<Rect> &rects) {
 Data generatePolygon(int gridWidth, int gridHeight) {
     std::random_device dev;
     std::mt19937 rng(dev());
-    std::uniform_int_distribution<std::mt19937::result_type> randomPercent(100,300);
+    std::uniform_int_distribution<std::mt19937::result_type> randomPercent(42,84);
     int width = gridWidth * (randomPercent(rng) / 100.0) / 100.0;
     int height = gridHeight * (randomPercent(rng) / 100.0) / 100.0;
     std::uniform_int_distribution<std::mt19937::result_type> random(width,720);
@@ -122,19 +122,24 @@ void testInsert(Tree &tree) {
     doc.SetColumnName(0, "n");
     doc.SetColumnName(1, "time");
     vector<long> times(500, 0);
-    const int iterations = 100;
+    const int iterations = 1;
+    vector<Data> polygons;
+    for (int i = 0; i < 5000; i++){
+        polygons.push_back(generatePolygon(512, 512));
+    }
+    int a = 0;
     for (int k = 0; k < iterations; k++) {
         for (int i = 0; i < 500; i++) {
             auto t1 = chrono::high_resolution_clock::now();
             for (int j =0; j < 10; j++) {
-                auto polygon = generatePolygon(720, 720);
-                tree.insert(polygon);
+                tree.insert(polygons[a]); a++;
             }
             auto t2 = chrono::high_resolution_clock::now();
             auto duration = chrono::duration_cast<chrono::microseconds>(t2-t1).count();
             times[i] += duration;
         }
         tree.clear();
+        a = 0;
     }
     for (int i = 0; i < times.size(); i++) {
         doc.InsertRow<double>(i, {(double)(i+1)*10, (double)times[i] / iterations});
@@ -173,14 +178,14 @@ void testRemove(Tree &tree) {
     rapidcsv::Document doc;
     std::random_device dev;
     std::mt19937 rng(dev());
-    std::uniform_int_distribution<std::mt19937::result_type> random(0,1000);
+    std::uniform_int_distribution<std::mt19937::result_type> random(0,5000);
     doc.InsertColumn<int>(0, {1000, 2000, 3000, 4000, 5000}, "n");
     const int iterations = 2;
     for (int k = 0; k < iterations; k++) {
         vector<long> times;
         vector<Data> polygons;
-        for (int j =0; j < 5000; j++) {
-            auto polygon = generatePolygon(720, 720);
+        for (int j = 0; j < 5000; j++) {
+            auto polygon = generatePolygon(512, 512);
             polygons.push_back(polygon);
             tree.insert(polygon);
         }
