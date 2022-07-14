@@ -140,6 +140,10 @@ void testInsert(Tree &tree) {
         }
         tree.clear();
         a = 0;
+        polygons.clear();
+        for (int i = 0; i < 5000; i++){
+            polygons.push_back(generatePolygon(512, 512));
+        }
     }
     for (int i = 0; i < times.size(); i++) {
         doc.InsertRow<double>(i, {(double)(i+1)*10, (double)times[i] / iterations});
