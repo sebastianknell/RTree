@@ -18,7 +18,7 @@ using namespace std;
 
 using Circle = struct {Point center; int radius;};
 
-struct Node {
+struct Node{
     Rect rect;
     Circle circle;
     int minRadius;

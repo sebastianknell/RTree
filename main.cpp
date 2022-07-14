@@ -1,15 +1,76 @@
 #include "RTree.h"
+<<<<<<< HEAD
 #include "lib/testing.h"
+=======
+#include "HilbertRtree.h"
+>>>>>>> dev-hilbert
 
 using namespace std;
 
-const int height = 720;
-const int width = 1080;
+const int height = 1024;
+const int width = 1024;
 const string windowName = "RTree Visualization";
 cv::Mat img(height, width, CV_8UC3, {255, 255, 255});
 bool drawing = false;
 vector<Point> currentDrawing;
 RTree rtree;
+
+HilbertRtree* hrt = new HilbertRtree(width, height);
+
+static void clickHandler2(int event, int x, int y, int flags, void*) {
+    if (event == cv::EVENT_LBUTTONDOWN) {
+        if (!drawing) {
+            if (flags == (cv::EVENT_FLAG_ALTKEY + cv::EVENT_FLAG_LBUTTON)) {
+                drawing = true;
+                currentDrawing.emplace_back(x, y);
+                cv::circle(img, {x, y}, radius, {0, 0, 0}, -1);
+            }
+            else {
+                cout << x << ", " << y << endl;
+                hrt->insert({{x, y}});
+                img.setTo(cv::Scalar(255, 255, 255));
+                hrt->showHilbert(img);
+            }
+        }
+        else {
+            cv::line(img, currentDrawing.back(), {x, y}, colors[0], 2);
+            cv::circle(img, {x, y}, radius, {0, 0, 0}, -1);
+            if (isInCircle({x, y}, currentDrawing.front(), radius)) {
+                for (auto &p : currentDrawing) cout << p.x << ", " << p.y << " | ";
+                cout << endl;
+                hrt->insert(currentDrawing);
+                img.setTo(cv::Scalar(255,255,255));
+                hrt->showHilbert(img);
+                currentDrawing.clear();
+                drawing = false;
+            }
+            else currentDrawing.emplace_back(x, y);
+        }
+        cv::imshow(windowName, img);
+    }
+    else if (event == cv::EVENT_RBUTTONDOWN) {
+        cout << x << ", " << y << endl;
+        hrt->remove({{x, y}});
+        img.setTo(cv::Scalar(255, 255, 255));
+        hrt->showHilbert(img);
+        cv::imshow(windowName, img);
+    }
+    else if (event == cv::EVENT_MOUSEMOVE) {
+        if (!drawing && !hrt->isEmpty()) {
+            img.setTo(cv::Scalar(255, 255, 255));
+            hrt->showHilbert(img);
+//            auto nns = rtree.depthFirst({x, y}, 3);
+            auto nns = hrt->knn({x, y}, 3);
+            for (auto nn : nns) {
+               // cv::line(img, {x, y}, nn.p, {0, 0, 0}, 1);
+                if (nn.node->data[nn.index].data.size() == 1)
+                    cv::circle(img, nn.node->data[nn.index].data.back(), radius, colors[5], -1);
+                else cv::polylines(img, nn.node->data[nn.index].data, true, colors[5], 2);
+            }
+            cv::imshow(windowName, img);
+        }
+    }
+}
 
 static void clickHandler(int event, int x, int y, int flags, void*) {
     if (event == cv::EVENT_LBUTTONDOWN) {
@@ -57,6 +118,7 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
             auto nns = rtree.knn({x, y}, 3);
             for (auto nn : nns) {
                 cv::line(img, {x, y}, nn.p, {0, 0, 0}, 1);
+
                 if (nn.node->data[nn.index]->size() == 1)
                     cv::circle(img, nn.node->data[nn.index]->back(), radius, colors[5], -1);
                 else cv::polylines(img, *nn.node->data[nn.index], true, colors[5], 2);

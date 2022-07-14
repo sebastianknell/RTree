@@ -13,7 +13,16 @@
 using namespace std;
 
 using Point = cv::Point;
-using Rect = struct {int x_low; int y_low; int x_high; int y_high;};
+struct Rect {
+    int x_low; int y_low; int x_high; int y_high;
+    void operator=(Rect r) {
+        x_low = r.x_low;
+        y_low = r.y_low;
+        x_high = r.x_high;
+        y_high = r.y_high;
+    }
+};
+// using Rect = struct {int x_low; int y_low; int x_high; int y_high;};
 using Data = vector<Point>;
 
 class Tree {
@@ -36,5 +45,6 @@ Rect getBoundingBox(const Data &data);
 Rect getBoundingRect(const vector<Rect> &regions);
 Point getCenter(const Rect&);
 int getArea(const Rect&);
+bool rectsOverlap(Rect r1, Rect r2);
 
 #endif //RTREE_UTILS_H
