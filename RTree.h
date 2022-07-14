@@ -56,8 +56,8 @@ public:
     void useCircles();
     void show(cv::InputOutputArray &);
     void clear() override;
-    double getLeafsOverlap() override;
-    double getInternalOverlap() override;
+    vector<double> getLeafsOverlap() override;
+    vector<double> getInternalOverlap() override;
 };
 
 

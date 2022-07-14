@@ -615,35 +615,34 @@ void RTree::clear() {
     root = nullptr;
 }
 
-double RTree::getLeafsOverlap() {
-    vector<Rect> rects;
+vector<double> RTree::getLeafsOverlap() {
+    vector<double> overlaps;
     stack<Node*> dfs;
     dfs.push(root);
     while (!dfs.empty()) {
         auto curr = dfs.top();
         dfs.pop();
         if (curr->isLeaf) {
-            for (auto r : curr->regions) rects.push_back(r);
+            overlaps.push_back(getTotalOverlap2(curr->regions));
         }
         else {
             for (auto &c : curr->childs) dfs.push(c);
         }
     }
-    return getTotalOverlap2(rects);
+    return overlaps;
 }
 
-double RTree::getInternalOverlap() {
+vector<double> RTree::getInternalOverlap() {
     stack<Node*> dfs;
-    double overlap = 0.0;
-    int area = 0;
+    vector<double> overlaps;
     dfs.push(root);
     while (!dfs.empty()) {
         auto curr = dfs.top();
         dfs.pop();
         if (!curr->isLeaf) {
-            for (auto r : curr->regions) area += getArea(r);
-            overlap += getTotalOverlap2(curr->regions);
+            overlaps.push_back(getTotalOverlap2(curr->regions));
+            for (auto &c : curr->childs) dfs.push(c);
         }
     }
-    return overlap / (area - overlap);
+    return overlaps;
 }
