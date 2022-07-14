@@ -138,8 +138,6 @@ void HilbertRtree::handleOverflow(HilbertNode* v) {
             C.pop();
         }
         // actualizar currNode
-        //currNode->updateBoundingBox();
-        
         currNode->updateLHV();
         // actualizando los bounding rects de los nodos hoja
         currNode->rect = getBoundingRect(currNode->regions);
@@ -164,7 +162,6 @@ void HilbertRtree::handleOverflow(HilbertNode* v) {
         /* terminan cambios */
         C.pop();
     }
-    //lastNode->updateBoundingBox();
     lastNode->updateLHV();
     // actualizando el bounding rect del lastNode
     lastNode->rect = getBoundingRect(lastNode->regions);
@@ -181,26 +178,6 @@ void HilbertRtree::handleOverflow(HilbertNode* v) {
     if (p->children.size() > M) handleOverflow(p);
 }
 
-void HilbertNode::updateBoundingBox() {
-    int x_min = INT_MAX;
-    int y_min = INT_MAX;
-    int x_max = 0;
-    int y_max = 0;
-
-    for (auto rect : this->regions) {
-        if (rect.x_low < x_min) x_min = rect.x_low;
-        if (rect.y_low < y_min) y_min = rect.y_low;
-        if (rect.x_high > x_max) x_max = rect.x_high;
-        if (rect.y_high > y_max) y_max = rect.y_high;
-    }
-    /*
-    this->rect.x_low = x_min;
-    this->rect.y_low = y_min;
-    this->rect.x_high = x_max;
-    this->rect.y_high = x_max;
-    */
-}
-
 void HilbertNode::updateLHV() {
     if (isLeaf) {
         this->lhv = data[data.size()-1].hIndex;
@@ -211,7 +188,6 @@ void HilbertNode::updateLHV() {
     
 // creo que si se podria pasar un puntero NN si es que se hizo split aquí
 void HilbertRtree::adjustTree(HilbertNode* node) { //, Node* NN
-    // node->updateBoundingBox();
     if (node->isLeaf) {
         for (int i=0; i<node->data.size(); i++) {
             node->regions[i] = getBoundingBox(node->data[i].data);
@@ -274,7 +250,7 @@ bool operator==(Data data1, Data data2) {
     return true;
 }
 
-pair<int, HilbertNode*> HilbertRtree::search(const Data obj) {
+pair<int, HilbertNode*> HilbertRtree::searchUtil(const Data obj) {
     auto R = getBoundingBox(obj);
     auto h = getHilbertIndex(getCenter(R));
 
@@ -292,6 +268,10 @@ pair<int, HilbertNode*> HilbertRtree::search(const Data obj) {
     }
 
     return make_pair(-1, nullptr);
+}
+
+void HilbertRtree::search(const Data obj) {
+    searchUtil(obj);
 }
 
 static lineToH getDistanceToSegment(Point p, Point a, Point b) {
@@ -446,8 +426,6 @@ void HilbertRtree::handleUnderflow(HilbertNode* v) {
             C.pop();
         }
         // actualizar currNode
-        //currNode->updateBoundingBox();
-        
         currNode->updateLHV();
         // actualizando los bounding rects de los nodos hoja
         currNode->rect = getBoundingRect(currNode->regions);
@@ -472,7 +450,6 @@ void HilbertRtree::handleUnderflow(HilbertNode* v) {
         /* terminan cambios */
         C.pop();
     }
-    //lastNode->updateBoundingBox();
     lastNode->updateLHV();
     // actualizando el bounding rect del lastNode
     lastNode->rect = getBoundingRect(lastNode->regions);
@@ -534,7 +511,7 @@ void HilbertRtree::handleUnderflow(HilbertNode* v) {
 }
 
 void HilbertRtree::remove(const Data obj) {
-    auto n = search(obj);
+    auto n = searchUtil(obj);
     if (n.first == -1) {
         return;
     }

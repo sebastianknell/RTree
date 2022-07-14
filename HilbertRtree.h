@@ -63,7 +63,8 @@ public:
     }
     void insert(const Data);
     void remove(const Data);
-    pair<int, HilbertNode*> search(const Data);
+    void search(const Data);
+    pair<int, HilbertNode*> searchUtil(const Data);
     vector<knnResultH> knn(Point, int);
     void adjustTree(HilbertNode*);
     HilbertNode* chooseLeaf(HilbertNode*, int);

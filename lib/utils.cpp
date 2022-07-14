@@ -81,11 +81,10 @@ Point getCenter(const Rect &rect) {
     return {(rect.x_low + rect.x_high) / 2, (rect.y_low + rect.y_high) / 2};
 }
 
-<<<<<<< HEAD:lib/utils.cpp
 int getArea(const Rect &rect) {
     return (rect.x_high - rect.x_low) * (rect.y_high - rect.y_low);
 }
-=======
+
 bool rectsOverlap(Rect r1, Rect r2) {
     if (isInRect({r1.x_high, r1.y_high}, r2) || isInRect({r1.x_high, r1.y_low}, r2) || 
             isInRect({r1.x_low, r1.y_high}, r2) || isInRect({r1.x_low, r1.y_high}, r2)) return true;
@@ -93,4 +92,3 @@ bool rectsOverlap(Rect r1, Rect r2) {
             isInRect({r2.x_low, r2.y_high}, r1) || isInRect({r2.x_low, r2.y_high}, r1)) return true;
     return false;
 }
->>>>>>> dev-hilbert:utils.cpp
