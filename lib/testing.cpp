@@ -211,6 +211,8 @@ void testKnn(Tree &tree, const string &path) {
     doc.Save(path);
 }
 
+
+
 void compareOverlap(const string &path) {
     rapidcsv::Document overlaps;
     overlaps.SetColumnName(0, "divisiones");
@@ -224,6 +226,7 @@ void compareOverlap(const string &path) {
     HilbertRtree htree(512, 512);
     int levels = 3;
     const int maxLevels = 12;
+    const int n = 100;
     vector<double> htreeSampleLeaf;
     vector<double> htreeSampleInternal;
     vector<double> htreeSampleAll;
@@ -234,7 +237,7 @@ void compareOverlap(const string &path) {
         double htreeOverlapInternal = 0.0;
         double rtreeOverlapAll = 0.0;
         double htreeOverlapAll = 0.0;
-        for (int iter = 0; iter < 1; iter++) {
+        for (int iter = 0; iter < n; iter++) {
             for (int j =0; j < 5000; j++) {
                 auto polygon = generatePolygon(512, 512);
                 rtree.insert(polygon);
@@ -272,14 +275,18 @@ void compareOverlap(const string &path) {
             rtree.clear();
             htree.clear();
         }
-        overlaps.InsertRow<double>(levels-3, {(double)levels, rtreeOverlapLeaf/100, htreeOverlapLeaf/100, rtreeOverlapInternal/100, htreeOverlapInternal/100, rtreeOverlapAll/100, htreeOverlapAll/100});
+        overlaps.InsertRow<double>(levels-3, {(double)levels, rtreeOverlapLeaf/n, htreeOverlapLeaf/n, rtreeOverlapInternal/n, htreeOverlapInternal/n, rtreeOverlapAll/n, htreeOverlapAll/n});
         levels++;
         htree.setLevels(levels);
     }
     overlaps.Save(path);
-    rapidcsv::Document overlapSample;
-    overlapSample.InsertColumn(0, htreeSampleLeaf, "overlap_leaf");
-    overlapSample.InsertColumn(1, htreeSampleInternal, "overlap_internal");
-    overlapSample.InsertColumn(2, htreeSampleAll, "overlap_all");
-    overlapSample.Save("../overlap_sample_htree");
+    rapidcsv::Document overlapSampleLeaf;
+    rapidcsv::Document overlapSampleInternal;
+    rapidcsv::Document overlapSampleAll;
+    overlapSampleLeaf.InsertColumn(0, htreeSampleLeaf, "overlap_leaf");
+    overlapSampleInternal.InsertColumn(0, htreeSampleInternal, "overlap_internal");
+    overlapSampleAll.InsertColumn(0, htreeSampleAll, "overlap_all");
+    overlapSampleLeaf.Save("../output/overlap_sample_htree_leaf.csv");
+    overlapSampleInternal.Save("../output/overlap_sample_htree_internal.csv");
+    overlapSampleAll.Save("../output/overlap_sample_htree_all.csv");
 }
