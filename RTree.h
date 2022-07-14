@@ -8,9 +8,11 @@
 #include <iostream>
 #include <vector>
 #include <stack>
+#include <list>
 #include <algorithm>
 #include <cmath>
 #include <random>
+#include <optional>
 #include <opencv2/opencv.hpp>
 #include "lib/utils.h"
 

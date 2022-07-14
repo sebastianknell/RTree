@@ -353,7 +353,7 @@ void RTree::reinsert2(queue<Node*> &nodes) {
         auto nodeToInsert = nodes.front();
         nodes.pop();
         if (nodeToInsert->isLeaf) {
-            for (auto &d : nodeToInsert->data) {
+            for (auto d : nodeToInsert->data) {
                 insert(*d);
             }
         }
@@ -366,33 +366,28 @@ void RTree::reinsert2(queue<Node*> &nodes) {
                 curr = curr->childs[regionIndex];
             }
             // ya estamos en el nivel correcto
-            for (auto &region : nodeToInsert->regions) addRegion(curr, region);
-            for (auto &child : nodeToInsert->childs) curr->childs.push_back(child);
+            for (auto region : nodeToInsert->regions) addRegion(curr, region);
+            for (auto child : nodeToInsert->childs) curr->childs.push_back(child);
             adjustTree(curr, parents);
         }
     }
-    if (checkSubtree(root)) {
-        cout << "algo esta mal" << endl;
-    }
 }
 
-void RTree::remove(const Data &data) {
-    if (!root) return;
-    auto bb = getBoundingBox(data);
-    stack<pos> parents;
-    stack<pos> dfs;
-    auto curr = root;
-    bool found = false;
-    // Encontrar hoja en recorrido dfs y quedarme con el stack de padres
+pair<bool, list<pos>*> findLeaf(Node* curr, const Data &data, const Rect &bb) {
     if (!curr->isLeaf) {
         for (int i = 0; i < curr->regions.size(); i++) {
             if (isOverlapping(bb, curr->regions[i])) {
-                dfs.push({curr, i});
-                parents.push({curr, i});
+                auto res = findLeaf(curr->childs[i], data, bb);
+                if (res.first) {
+                    res.second->push_front({curr, i});
+                    return {true, res.second};
+                }
             }
         }
+        return {false, nullptr};
     }
     else {
+        bool found = false;
         for (int i = 0; i < curr->regions.size(); i++) {
             if (data.size() == 1) {
                 if (curr->data[i]->size() == 1) {
@@ -404,66 +399,31 @@ void RTree::remove(const Data &data) {
                     if (isInRect(data.front(), curr->regions[i])) found = true;
                 }
             }
-            else if(curr->data[i]->size() > 1 && data.size() == 1){
-                if(isInRect(data.front(), curr->regions[i])) found = true;
-            }
             else if (*curr->data[i] == data) {
                 found = true;
             }
             if (found) {
-                dfs.push({curr, i});
-                parents.push({curr, i});
-                break;
+                auto parents = new list<pos>;
+                parents->push_front({curr, i});
+                return {true, parents};
             }
         }
+        return {false, nullptr};
     }
-    while (!dfs.empty() && !found) {
-        curr = dfs.top().node->childs[parents.top().index];
-        dfs.pop();
-        if (!curr->isLeaf) {
-            bool isCandidate = false;
-            for (int i = 0; i < curr->regions.size(); i++) {
-                if (isOverlapping(bb, curr->regions[i])) {
-                    dfs.push({curr, i});
-                    parents.push({curr, i});
-                    isCandidate = true;
-                }
-            }
-            if (!isCandidate) parents.pop();
-        }
-        else {
-            for (int i = 0; i < curr->regions.size(); i++) {
-                if (data.size() == 1) {
-                    if (curr->data[i]->size() == 1) {
-                        if (isInCircle(data.front(), curr->data[i]->front(), radius)) {
-                            found = true;
-                        }
-                    }
-                    else {
-                        if (isInRect(data.front(), curr->regions[i])) found = true;
-                    }
-                }
-                else if(curr->data[i]->size() > 1 && data.size() == 1){
-                    if(isInRect(data.front(), curr->regions[i])) found = true;
-                }
-                else if (*curr->data[i] == data) {
-                    found = true;
-                }
-                if (found) {
-                    parents.push({curr, i});
-                    break;
-                }
-            }
-            if (!found) parents.pop();
-        }
-    }
-    // Si no se encontro, terminar
-    if (!found) return;
+}
 
+void RTree::remove(const Data &data) {
+    if (!root) return;
+    auto bb = getBoundingBox(data);
+    auto res = findLeaf(root, data, bb);
+    // Si no se encontro, terminar
+    if (!res.first) return;
     // Eliminar data
+    auto parents = res.second;
+    auto curr = parents->back().node;
     assert(curr->isLeaf);
-    auto currIndex = parents.top().index;
-    parents.pop();
+    auto currIndex = parents->back().index;
+    parents->pop_back();
     curr->regions.erase(curr->regions.begin() + currIndex);
     curr->data.erase(curr->data.begin() + currIndex);
     curr->rect = getBoundingRect(curr->regions);
@@ -471,9 +431,9 @@ void RTree::remove(const Data &data) {
     // Ajustar bounding boxes de los padres
     auto temp = curr;
     queue<Node*> toReinsert;
-    while(!parents.empty() && temp != root){
-        auto p = parents.top();
-        while (!parents.empty() && parents.top().node->level == p.node->level) parents.pop();
+    while (!parents->empty() && temp != root) {
+        auto p = parents->back();
+        parents->pop_back();
         auto m = (int)order/2 + order%2;
 
         if (temp->regions.size() < m) {
@@ -492,7 +452,6 @@ void RTree::remove(const Data &data) {
         oldRoot->childs.clear();
         delete oldRoot;
     }
-
     // Reinsertar data huerfana
     reinsert2(toReinsert);
 }
