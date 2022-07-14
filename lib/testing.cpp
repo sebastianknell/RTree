@@ -185,7 +185,7 @@ void testKnn(Tree &tree, const string &path) {
     rapidcsv::Document doc;
     doc.InsertColumn<int>(0, {1000, 2000, 3000, 4000, 5000}, "n");
     const int iterations = 100;
-    vector<int> knnValues = {1, 5, 20};
+    int k = 1;
     std::random_device dev;
     std::mt19937 rng(dev());
     std::uniform_int_distribution<std::mt19937::result_type> randomPoint(0,512);
@@ -199,14 +199,11 @@ void testKnn(Tree &tree, const string &path) {
                 tree.insert(polygon);
             }
             Point p = {(int)randomPoint(rng), (int)randomPoint(rng)};
-            for (auto k : knnValues) {
-                auto t1 = chrono::high_resolution_clock::now();
-                tree.callKnn(p, k);
-                auto t2 = chrono::high_resolution_clock::now();
-                auto duration = chrono::duration_cast<chrono::microseconds>(t2-t1).count();
-                times.push_back(duration);
-            }
-
+            auto t1 = chrono::high_resolution_clock::now();
+            tree.callKnn(p, k);
+            auto t2 = chrono::high_resolution_clock::now();
+            auto duration = chrono::duration_cast<chrono::microseconds>(t2-t1).count();
+            times.push_back(duration);
         }
         doc.InsertColumn(iter+1, times, "times" + to_string(iter+1));
         tree.clear();
@@ -214,6 +211,62 @@ void testKnn(Tree &tree, const string &path) {
     doc.Save(path);
 }
 
-void compareOverlap(const string &path) {
+void compareOverlapLeaf(const string &path) {
+    rapidcsv::Document doc;
+    doc.SetColumnName(0, "divisiones");
+    doc.SetColumnName(1, "rtree_overlap");
+    doc.SetColumnName(2, "htree_overlap");
+    RTree rtree;
+    HilbertRtree htree(512, 512);
+    int levels = 3;
+    const int maxLevels = 8;
+    while (levels < maxLevels) {
+        double rtreeOverlap = 0.0;
+        double htreeOverlap = 0.0;
+        for (int iter = 0; iter < 1; iter++) {
+            for (int j =0; j < 5000; j++) {
+                auto polygon = generatePolygon(512, 512);
+                rtree.insert(polygon);
+                htree.insert(polygon);
+            }
+            rtreeOverlap += rtree.getLeafsOverlap();
+            htreeOverlap += htree.getLeafsOverlap();
+            rtree.clear();
+            htree.clear();
+        }
+        doc.InsertRow<double>(levels-3, {(double)levels, rtreeOverlap / 100, htreeOverlap / 100});
+        levels++;
+        htree.setLevels(levels);
+    }
+    doc.Save(path);
+}
 
+void compareOverlapInternal(const string &path) {
+    rapidcsv::Document doc;
+    doc.SetColumnName(0, "divisiones");
+    doc.SetColumnName(1, "rtree_overlap");
+    doc.SetColumnName(2, "htree_overlap");
+    RTree rtree;
+    HilbertRtree htree(512, 512);
+    int levels = 3;
+    const int maxLevels = 8;
+    while (levels < maxLevels) {
+        double rtreeOverlap = 0.0;
+        double htreeOverlap = 0.0;
+        for (int iter = 0; iter < 1; iter++) {
+            for (int j =0; j < 5000; j++) {
+                auto polygon = generatePolygon(512, 512);
+                rtree.insert(polygon);
+                htree.insert(polygon);
+            }
+            rtreeOverlap += rtree.getInternalOverlap();
+            htreeOverlap += htree.getInternalOverlap();
+            rtree.clear();
+            htree.clear();
+        }
+        doc.InsertRow<double>(levels-3, {(double)levels, rtreeOverlap / 100, htreeOverlap / 100});
+        levels++;
+        htree.setLevels(levels);
+    }
+    doc.Save(path);
 }

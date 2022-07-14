@@ -657,9 +657,21 @@ double RTree::getLeafsOverlap() {
             for (auto &c : curr->childs) dfs.push(c);
         }
     }
-    return getTotalOverlap(rects);
+    return getTotalOverlap2(rects);
 }
 
 double RTree::getInternalOverlap() {
-
+    stack<Node*> dfs;
+    double overlap = 0.0;
+    int area = 0;
+    dfs.push(root);
+    while (!dfs.empty()) {
+        auto curr = dfs.top();
+        dfs.pop();
+        if (!curr->isLeaf) {
+            for (auto r : curr->regions) area += getArea(r);
+            overlap += getTotalOverlap2(curr->regions);
+        }
+    }
+    return overlap / (area - overlap);
 }

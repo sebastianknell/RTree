@@ -112,3 +112,16 @@ double getTotalOverlap(vector<Rect> &rects) {
     }
     return (double) intersection / total;
 }
+
+double getTotalOverlap2(vector<Rect> &rects) {
+    int intersection = 0;
+    int total = 0;
+    for (int i = 0; i < rects.size(); i++) {
+        total += getArea(rects[i]);
+        for (int j = i+1; j < rects.size(); j++) {
+            int overlap = getOverlap(rects[i], rects[j]);
+            intersection += overlap;
+        }
+    }
+    return (double) intersection / (total - intersection);
+}

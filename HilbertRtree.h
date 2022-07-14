@@ -88,6 +88,7 @@ public:
     }
     double getLeafsOverlap() override;
     double getInternalOverlap() override;
+    void setLevels(int l) {levels = l;};
 };
 
 

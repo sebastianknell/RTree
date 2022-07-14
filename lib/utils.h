@@ -8,6 +8,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <stack>
 #include <opencv2/opencv.hpp>
 
 using namespace std;
@@ -51,5 +52,6 @@ int getArea(const Rect&);
 bool rectsOverlap(Rect r1, Rect r2);
 int getOverlap(Rect, Rect);
 double getTotalOverlap(vector<Rect>&);
+double getTotalOverlap2(vector<Rect>&);
 
 #endif //RTREE_UTILS_H

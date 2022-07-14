@@ -127,14 +127,17 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
 
 int main() {
     // TEST RTREE
-    testInsert(rtree, "../output/insert_rtree.csv");
+//    testInsert(rtree, "../output/insert_rtree.csv");
 //    testSearch(rtree, "../output/search_rtree.csv");
 //    testRemove(rtree, "../output/remove_rtree.csv");
+    testKnn(rtree, "../output/knn1_rtree.csv");
     // TEST HILBERT RTREE
 //    HilbertRtree htree(512, 512);
 //    testInsert(htree, "../output/insert_htree.csv");
 //    testSearch(htree, "../output/search_htree.csv");
 //    testRemove(htree, "../output/remove_htree.csv");
+//    compareOverlapLeaf("../output/overlap_leaf.csv");
+//    compareOverlapInternal("../output/overlap_internal.csv");
 
 //    rtree.show(img);
 //    cv::imshow(windowName, img);

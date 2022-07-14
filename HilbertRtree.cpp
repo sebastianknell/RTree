@@ -573,9 +573,35 @@ void HilbertRtree::showHilbert(cv::InputOutputArray& img) {
 }
 
 double HilbertRtree::getLeafsOverlap() {
-
+    vector<Rect> rects;
+    stack<HilbertNode*> equisde;
+    equisde.push(root);
+    while (!equisde.empty()){
+        auto curr = equisde.top();
+        equisde.pop();
+        if(curr->isLeaf){
+            for (auto r : curr->regions)
+                rects.push_back(r);
+        } else {
+            for (auto &c : curr->children)
+                equisde.push(c);
+        }
+    }
+    return getTotalOverlap2(rects);
 }
 
 double HilbertRtree::getInternalOverlap() {
-
+    stack<HilbertNode*> dfs;
+    double overlap = 0.0;
+    int area = 0;
+    dfs.push(root);
+    while (!dfs.empty()) {
+        auto curr = dfs.top();
+        dfs.pop();
+        if (!curr->isLeaf) {
+            for (auto r : curr->regions) area += getArea(r);
+            overlap += getTotalOverlap2(curr->regions);
+        }
+    }
+    return overlap / (area - overlap);
 }
