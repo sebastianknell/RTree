@@ -4,37 +4,6 @@
 
 #include "testing.h"
 
-bool isOverlapping(Rect r1, Rect r2){
-    if((r1.x_high == r2.x_high) || (r1.x_low==r2.x_low) || (r1.y_high=r2.y_high) || (r1.y_low == r2.y_low))
-        return false;
-    if (r1.x_high > r2.x_high || r2.x_low > r1.x_low)
-        return false;
-    if (r1.y_high > r2.y_high || r2.y_low > r1.y_low)
-        return false;
-
-    return true;
-}
-
-int getOverlap(Rect r1, Rect r2) {
-    auto lx = max(0, min(r1.x_high, r2.x_high) - max(r1.x_low, r2.x_low));
-    auto ly = max(0, min(r1.y_high, r2.y_high) - max(r1.y_low, r2.y_low));
-    return lx * ly;
-}
-
-double getTotalOverlap(vector<Rect> &rects) {
-    int intersection = 0;
-    int total = 0;
-    for (int i = 0; i < rects.size(); i++) {
-        for (int j = i+1; j < rects.size(); j++) {
-            int overlap = getOverlap(rects[i], rects[j]);
-            int S = getArea(rects[i]) + getArea(rects[j]) - overlap;
-            intersection += overlap;
-            total += S;
-        }
-    }
-    return (double) intersection / total;
-}
-
 Data generatePolygon(int gridWidth, int gridHeight) {
     std::random_device dev;
     std::mt19937 rng(dev());
@@ -210,4 +179,41 @@ void testRemove(Tree &tree, const string& path) {
         times.clear();
     }
     doc.Save(path);
+}
+
+void testKnn(Tree &tree, const string &path) {
+    rapidcsv::Document doc;
+    doc.InsertColumn<int>(0, {1000, 2000, 3000, 4000, 5000}, "n");
+    const int iterations = 100;
+    vector<int> knnValues = {1, 5, 20};
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_int_distribution<std::mt19937::result_type> randomPoint(0,512);
+    for (int iter = 0; iter < iterations; iter++) {
+        vector<long> times;
+        for (int i = 0; i < 5; i++) {
+            vector<Data> polygons;
+            for (int j =0; j < 1000; j++) {
+                auto polygon = generatePolygon(512, 512);
+                polygons.push_back(polygon);
+                tree.insert(polygon);
+            }
+            Point p = {(int)randomPoint(rng), (int)randomPoint(rng)};
+            for (auto k : knnValues) {
+                auto t1 = chrono::high_resolution_clock::now();
+                tree.callKnn(p, k);
+                auto t2 = chrono::high_resolution_clock::now();
+                auto duration = chrono::duration_cast<chrono::microseconds>(t2-t1).count();
+                times.push_back(duration);
+            }
+
+        }
+        doc.InsertColumn(iter+1, times, "times" + to_string(iter+1));
+        tree.clear();
+    }
+    doc.Save(path);
+}
+
+void compareOverlap(const string &path) {
+
 }

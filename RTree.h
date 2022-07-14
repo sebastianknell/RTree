@@ -54,9 +54,12 @@ public:
     void remove(const Data&) override;
     vector<knnResult> knn(Point, int);
     vector<knnResult> depthFirst(Point, int);
+    void callKnn(Point, int) override;
     void useCircles();
     void show(cv::InputOutputArray &);
     void clear() override;
+    void getLeafsOverlap() override;
+    void getInternalOverlap() override;
 };
 
 

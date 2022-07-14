@@ -535,6 +535,10 @@ vector<knnResult> RTree::depthFirst(Point p, int k) {
     return result;
 }
 
+void RTree::callKnn(Point p, int k) {
+    knn(p, k);
+}
+
 static void useCirclesRec(Node* node) {
     // Solo funciona con puntos
     if (node->isLeaf) {
@@ -637,4 +641,12 @@ void RTree::show(cv::InputOutputArray &img) {
 void RTree::clear() {
     delete root;
     root = nullptr;
+}
+
+void RTree::getLeafsOverlap() {
+
+}
+
+void RTree::getInternalOverlap() {
+
 }

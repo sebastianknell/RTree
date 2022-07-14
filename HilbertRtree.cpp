@@ -350,6 +350,10 @@ vector<knnResultH> HilbertRtree::knn(Point p, int k) {
     return knn;
 }
 
+void HilbertRtree::callKnn(Point p, int k) {
+    knn(p, k);
+}
+
 /////////////////////////////////////////////////////////////////////////
 
 void HilbertRtree::handleUnderflow(HilbertNode* v) {
@@ -566,4 +570,12 @@ void HilbertRtree::showHilbert(cv::InputOutputArray& img) {
     colorIdx2 = 0;
     cv::rectangle(img, {root->rect.x_low, root->rect.y_low}, {root->rect.x_high-1, root->rect.y_high-1}, colors[root->lvl%6], 2);
     showHilbertNode(root, img);
+}
+
+void HilbertRtree::getLeafsOverlap() {
+
+}
+
+void HilbertRtree::getInternalOverlap() {
+
 }

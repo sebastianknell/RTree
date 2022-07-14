@@ -92,3 +92,23 @@ bool rectsOverlap(Rect r1, Rect r2) {
             isInRect({r2.x_low, r2.y_high}, r1) || isInRect({r2.x_low, r2.y_high}, r1)) return true;
     return false;
 }
+
+int getOverlap(Rect r1, Rect r2) {
+    auto lx = max(0, min(r1.x_high, r2.x_high) - max(r1.x_low, r2.x_low));
+    auto ly = max(0, min(r1.y_high, r2.y_high) - max(r1.y_low, r2.y_low));
+    return lx * ly;
+}
+
+double getTotalOverlap(vector<Rect> &rects) {
+    int intersection = 0;
+    int total = 0;
+    for (int i = 0; i < rects.size(); i++) {
+        for (int j = i+1; j < rects.size(); j++) {
+            int overlap = getOverlap(rects[i], rects[j]);
+            int S = getArea(rects[i]) + getArea(rects[j]) - overlap;
+            intersection += overlap;
+            total += S;
+        }
+    }
+    return (double) intersection / total;
+}

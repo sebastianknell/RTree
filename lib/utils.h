@@ -31,6 +31,9 @@ public:
     virtual void insert(const Data&) = 0;
     virtual void remove(const Data&) = 0;
     virtual void clear() = 0;
+    virtual void callKnn(Point, int) = 0;
+    virtual void getLeafsOverlap() = 0;
+    virtual void getInternalOverlap() = 0;
 };
 
 extern int radius;
@@ -46,5 +49,7 @@ Rect getBoundingRect(const vector<Rect> &regions);
 Point getCenter(const Rect&);
 int getArea(const Rect&);
 bool rectsOverlap(Rect r1, Rect r2);
+int getOverlap(Rect, Rect);
+double getTotalOverlap(vector<Rect>&);
 
 #endif //RTREE_UTILS_H

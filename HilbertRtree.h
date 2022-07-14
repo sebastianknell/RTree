@@ -75,6 +75,7 @@ public:
     void clear() override;
     pair<int, HilbertNode*> searchUtil(const Data);
     vector<knnResultH> knn(Point, int);
+    void callKnn(Point, int) override;
     void adjustTree(HilbertNode*);
     HilbertNode* chooseLeaf(HilbertNode*, int);
     void handleOverflow(HilbertNode*);
@@ -85,6 +86,8 @@ public:
             return root->data.size() == 0;
         return root->children.size() == 0;
     }
+    void getLeafsOverlap() override;
+    void getInternalOverlap() override;
 };
 
 
