@@ -572,10 +572,10 @@ void HilbertRtree::showHilbert(cv::InputOutputArray& img) {
     showHilbertNode(root, img);
 }
 
-void HilbertRtree::getLeafsOverlap() {
+double HilbertRtree::getLeafsOverlap() {
 
 }
 
-void HilbertRtree::getInternalOverlap() {
+double HilbertRtree::getInternalOverlap() {
 
 }

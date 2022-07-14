@@ -32,8 +32,8 @@ public:
     virtual void remove(const Data&) = 0;
     virtual void clear() = 0;
     virtual void callKnn(Point, int) = 0;
-    virtual void getLeafsOverlap() = 0;
-    virtual void getInternalOverlap() = 0;
+    virtual double getLeafsOverlap() = 0;
+    virtual double getInternalOverlap() = 0;
 };
 
 extern int radius;

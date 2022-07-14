@@ -86,8 +86,8 @@ public:
             return root->data.size() == 0;
         return root->children.size() == 0;
     }
-    void getLeafsOverlap() override;
-    void getInternalOverlap() override;
+    double getLeafsOverlap() override;
+    double getInternalOverlap() override;
 };
 
 

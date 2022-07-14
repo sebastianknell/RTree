@@ -643,10 +643,23 @@ void RTree::clear() {
     root = nullptr;
 }
 
-void RTree::getLeafsOverlap() {
-
+double RTree::getLeafsOverlap() {
+    vector<Rect> rects;
+    stack<Node*> dfs;
+    dfs.push(root);
+    while (!dfs.empty()) {
+        auto curr = dfs.top();
+        dfs.pop();
+        if (curr->isLeaf) {
+            for (auto r : curr->regions) rects.push_back(r);
+        }
+        else {
+            for (auto &c : curr->childs) dfs.push(c);
+        }
+    }
+    return getTotalOverlap(rects);
 }
 
-void RTree::getInternalOverlap() {
+double RTree::getInternalOverlap() {
 
 }
