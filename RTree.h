@@ -17,12 +17,8 @@
 
 using namespace std;
 
-using Circle = struct {Point center; int radius;};
-
 struct Node{
     Rect rect;
-    Circle circle;
-    int minRadius;
     int level;
     vector<Rect> regions; // regiones o bounding boxes si es hoja
     vector<Node*> childs;
@@ -42,8 +38,7 @@ class RTree : public Tree {
     int order;
     Node* splitNode(Node*) const;
     void adjustTree(Node*, stack<pos2>&);
-    void reinsert();
-    void reinsert2(queue<Node*>&);
+    void reinsert(queue<Node*>&);
 public:
     RTree(int order = 3);
     ~RTree();
@@ -54,7 +49,6 @@ public:
     vector<knnResult> knn(Point, int);
     vector<knnResult> depthFirst(Point, int);
     void callKnn(Point, int) override;
-    void useCircles();
     void show(cv::InputOutputArray &);
     void clear() override;
     double getLeafsOverlap() override;

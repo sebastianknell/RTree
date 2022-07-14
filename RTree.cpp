@@ -291,39 +291,11 @@ void RTree::insert(const Data &data) {
     adjustTree(curr, parents);
 }
 
-// Esta rect dentro de region?
 static bool isOverlapping(const Rect &rect, const Rect &region) {
     return isInRect({rect.x_low, rect.y_low}, region) &&
             isInRect({rect.x_low, rect.y_high}, region) &&
             isInRect({rect.x_high, rect.y_low}, region) &&
             isInRect({rect.x_high, rect.y_high}, region);
-}
-
-void dfs(vector<Data*> &toReinsert, Node* rt){
-
-    if(rt->isLeaf){
-        auto data = rt->data;
-        toReinsert.insert(toReinsert.begin(), data.begin(), data.end());
-        return;
-    }
-
-    for(auto node : rt->childs){
-        dfs(toReinsert, node);
-    }
-}
-
-void RTree::reinsert(){
-
-    vector<Data*> toReinsert;
-
-    dfs(toReinsert, root);
-    delete root;
-    root = nullptr;
-//    this->root = new Node(true);
-
-    for(auto dat : toReinsert){
-        insert(*dat);
-    }
 }
 
 static bool checkSubtree(Node* node) {
@@ -348,7 +320,7 @@ static bool checkSubtree(Node* node) {
     return isValid;
 }
 
-void RTree::reinsert2(queue<Node*> &nodes) {
+void RTree::reinsert(queue<Node*> &nodes) {
     while(!nodes.empty()) {
         auto nodeToInsert = nodes.front();
         nodes.pop();
@@ -373,7 +345,7 @@ void RTree::reinsert2(queue<Node*> &nodes) {
     }
 }
 
-pair<bool, list<pos>*> findLeaf(Node* curr, const Data &data, const Rect &bb) {
+static pair<bool, list<pos>*> findLeaf(Node* curr, const Data &data, const Rect &bb) {
     if (!curr->isLeaf) {
         for (int i = 0; i < curr->regions.size(); i++) {
             if (isOverlapping(bb, curr->regions[i])) {
@@ -453,7 +425,7 @@ void RTree::remove(const Data &data) {
         delete oldRoot;
     }
     // Reinsertar data huerfana
-    reinsert2(toReinsert);
+    reinsert(toReinsert);
 }
 
 vector<knnResult> RTree::knn(Point p, int k) {
@@ -537,57 +509,6 @@ vector<knnResult> RTree::depthFirst(Point p, int k) {
 
 void RTree::callKnn(Point p, int k) {
     knn(p, k);
-}
-
-static void useCirclesRec(Node* node) {
-    // Solo funciona con puntos
-    if (node->isLeaf) {
-        // Calcular el centroide a partir de los puntos
-        int cx = 0, cy = 0;
-        int A = 0;
-        for (auto &d : node->data) {
-            cx += d->front().x * radius;
-            cy += d->front().y * radius;
-            A += radius;
-        }
-        Point centroid = {cx/A, cy/A};
-        double maxD = 0;
-        double minD = INT_MAX;
-        for (auto &d : node->data) {
-            auto distance = getDistance(centroid, d->front());
-            if (distance > maxD) maxD = distance;
-            if (distance < minD) minD = distance;
-        }
-        node->circle = {centroid, (int)maxD};
-        node->minRadius = minD;
-    }
-    else {
-        for (auto &c : node->childs) {
-            useCirclesRec(c);
-        }
-        // Calcular el centroide a partir de los circulos hijos
-        int cx = 0, cy = 0;
-        int A = 0;
-        for (auto &c : node->childs) {
-            cx += c->circle.center.x * pow(c->circle.radius, 2);
-            cy += c->circle.center.y * pow(c->circle.radius, 2);
-            A += pow(c->circle.radius, 2);
-        }
-        Point centroid = {cx/A, cy/A};
-        double maxD = 0;
-        double minD = INT_MAX;
-        for (auto &c : node->childs) {
-            auto distance = getDistance(centroid, c->circle.center) + c->circle.radius;
-            if (distance > maxD) maxD = distance;
-            if (distance < minD) minD = distance;
-        }
-        node->circle = {centroid, (int)maxD};
-        node->minRadius = minD;
-    }
-}
-
-void RTree::useCircles() {
-    useCirclesRec(root);
 }
 
 void RTree::search(const Data &data) {
