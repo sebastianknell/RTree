@@ -126,12 +126,16 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
 }
 
 int main() {
-    HilbertRtree htree(width, height);
-    testInsert(htree);
-    // testInsert(rtree);
-//    testSearch(rtree);
-//    testRemove(rtree);
-//    testOverlap();
+    // TEST RTREE
+    testInsert(rtree, "../output/insert_rtree.csv");
+    testSearch(rtree, "../output/search_rtree.csv");
+    testRemove(rtree, "../output/remove_rtree.csv");
+    // TEST HILBERT RTREE
+    HilbertRtree htree(512, 512);
+    testInsert(htree, "../output/insert_htree.csv");
+    testSearch(htree, "../output/search_htree.csv");
+    testRemove(htree, "../output/remove_htree.csv");
+
 //    rtree.show(img);
 //    cv::imshow(windowName, img);
 //    cv::waitKey(1);

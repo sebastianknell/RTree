@@ -15,8 +15,8 @@ int getOverlap(Rect, Rect);
 double getTotalOverlap(vector<Rect>&);
 Data generatePolygon(int, int);
 void testOverlap();
-void testSearch(Tree&);
-void testInsert(Tree&);
-void testRemove(Tree&);
+void testSearch(Tree&, const string&);
+void testInsert(Tree&, const string&);
+void testRemove(Tree&, const string&);
 
 #endif //RTREE_TESTING_H

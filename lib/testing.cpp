@@ -117,12 +117,12 @@ void testOverlap() {
     doc.Save("../output/overlap.csv");
 }
 
-void testInsert(Tree &tree) {
+void testInsert(Tree &tree, const string& path) {
     rapidcsv::Document doc;
     doc.SetColumnName(0, "n");
     doc.SetColumnName(1, "time");
     vector<long> times(500, 0);
-    const int iterations = 1;
+    const int iterations = 100;
     vector<Data> polygons;
     for (int i = 0; i < 5000; i++){
         polygons.push_back(generatePolygon(512, 512));
@@ -148,10 +148,10 @@ void testInsert(Tree &tree) {
     for (int i = 0; i < times.size(); i++) {
         doc.InsertRow<double>(i, {(double)(i+1)*10, (double)times[i] / iterations});
     }
-    doc.Save("../output/insert.csv");
+    doc.Save(path);
 }
 
-void testSearch(Tree &tree) {
+void testSearch(Tree &tree, const string& path) {
     rapidcsv::Document doc;
     doc.InsertColumn<int>(0, {1000, 2000, 3000, 4000, 5000}, "n");
     const int iterations = 100;
@@ -160,7 +160,7 @@ void testSearch(Tree &tree) {
         for (int i = 0; i < 5; i++) {
             vector<Data> polygons;
             for (int j =0; j < 1000; j++) {
-                auto polygon = generatePolygon(720, 720);
+                auto polygon = generatePolygon(512, 512);
                 polygons.push_back(polygon);
                 tree.insert(polygon);
             }
@@ -175,16 +175,16 @@ void testSearch(Tree &tree) {
         doc.InsertColumn(k+1, times, "times" + to_string(k+1));
         tree.clear();
     }
-    doc.Save("../output/search.csv");
+    doc.Save(path);
 }
 
-void testRemove(Tree &tree) {
+void testRemove(Tree &tree, const string& path) {
     rapidcsv::Document doc;
     std::random_device dev;
     std::mt19937 rng(dev());
     std::uniform_int_distribution<std::mt19937::result_type> random(0,5000);
     doc.InsertColumn<int>(0, {1000, 2000, 3000, 4000, 5000}, "n");
-    const int iterations = 2;
+    const int iterations = 100;
     for (int k = 0; k < iterations; k++) {
         vector<long> times;
         vector<Data> polygons;
@@ -197,7 +197,6 @@ void testRemove(Tree &tree) {
             auto t1 = chrono::high_resolution_clock::now();
             for (int j = 0; j < 1000; j++) {
                 auto index = random(rng) % polygons.size();
-                // TODO algo esta fallando en el remove
                 tree.remove(polygons[index]);
                 // Problema: se cuenta para el tiempo
                 polygons.erase(polygons.begin() + index);
@@ -210,5 +209,5 @@ void testRemove(Tree &tree) {
         tree.clear();
         times.clear();
     }
-    doc.Save("../output/remove.csv");
+    doc.Save(path);
 }

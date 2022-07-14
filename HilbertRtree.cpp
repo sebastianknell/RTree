@@ -275,6 +275,7 @@ void HilbertRtree::search(const Data& obj) {
 
 void HilbertRtree::clear() {
     delete this->root;
+    root = nullptr;
 }
 
 static lineToH getDistanceToSegment(Point p, Point a, Point b) {
