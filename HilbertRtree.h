@@ -32,6 +32,14 @@ struct HilbertNode {
 
     explicit HilbertNode(bool isLeaf): isLeaf(isLeaf), lhv(0), parent(nullptr), lvl(0) {}
     HilbertNode() {}
+    ~HilbertNode() {
+        if (!isLeaf) {
+            for (int i = 0; i < children.size(); i++) {
+                delete children[i];
+            }
+        }
+    }
+
     void insertOrdered(HData hdata, Rect region);
     void updateBoundingBox();
     void updateLHV();
@@ -72,7 +80,11 @@ public:
     void handleOverflow(HilbertNode*);
     void handleUnderflow(HilbertNode*);
     void showHilbert(cv::InputOutputArray&);
-    bool isEmpty() { return root == nullptr; };
+    bool isEmpty() {
+        if (root->isLeaf)
+            return root->data.size() == 0;
+        return root->children.size() == 0;
+    }
 };
 
 
