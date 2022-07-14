@@ -291,39 +291,11 @@ void RTree::insert(const Data &data) {
     adjustTree(curr, parents);
 }
 
-// Esta rect dentro de region?
 static bool isOverlapping(const Rect &rect, const Rect &region) {
     return isInRect({rect.x_low, rect.y_low}, region) &&
             isInRect({rect.x_low, rect.y_high}, region) &&
             isInRect({rect.x_high, rect.y_low}, region) &&
             isInRect({rect.x_high, rect.y_high}, region);
-}
-
-void dfs(vector<Data*> &toReinsert, Node* rt){
-
-    if(rt->isLeaf){
-        auto data = rt->data;
-        toReinsert.insert(toReinsert.begin(), data.begin(), data.end());
-        return;
-    }
-
-    for(auto node : rt->childs){
-        dfs(toReinsert, node);
-    }
-}
-
-void RTree::reinsert(){
-
-    vector<Data*> toReinsert;
-
-    dfs(toReinsert, root);
-    delete root;
-    root = nullptr;
-//    this->root = new Node(true);
-
-    for(auto dat : toReinsert){
-        insert(*dat);
-    }
 }
 
 static bool checkSubtree(Node* node) {
@@ -348,7 +320,7 @@ static bool checkSubtree(Node* node) {
     return isValid;
 }
 
-void RTree::reinsert2(queue<Node*> &nodes) {
+void RTree::reinsert(queue<Node*> &nodes) {
     while(!nodes.empty()) {
         auto nodeToInsert = nodes.front();
         nodes.pop();
@@ -373,7 +345,7 @@ void RTree::reinsert2(queue<Node*> &nodes) {
     }
 }
 
-pair<bool, list<pos>*> findLeaf(Node* curr, const Data &data, const Rect &bb) {
+static pair<bool, list<pos>*> findLeaf(Node* curr, const Data &data, const Rect &bb) {
     if (!curr->isLeaf) {
         for (int i = 0; i < curr->regions.size(); i++) {
             if (isOverlapping(bb, curr->regions[i])) {
@@ -453,7 +425,7 @@ void RTree::remove(const Data &data) {
         delete oldRoot;
     }
     // Reinsertar data huerfana
-    reinsert2(toReinsert);
+    reinsert(toReinsert);
 }
 
 vector<knnResult> RTree::knn(Point p, int k) {
@@ -643,35 +615,34 @@ void RTree::clear() {
     root = nullptr;
 }
 
-double RTree::getLeafsOverlap() {
-    vector<Rect> rects;
+vector<double> RTree::getLeafsOverlap() {
+    vector<double> overlaps;
     stack<Node*> dfs;
     dfs.push(root);
     while (!dfs.empty()) {
         auto curr = dfs.top();
         dfs.pop();
         if (curr->isLeaf) {
-            for (auto r : curr->regions) rects.push_back(r);
+            overlaps.push_back(getTotalOverlap2(curr->regions));
         }
         else {
             for (auto &c : curr->childs) dfs.push(c);
         }
     }
-    return getTotalOverlap2(rects);
+    return overlaps;
 }
 
-double RTree::getInternalOverlap() {
+vector<double> RTree::getInternalOverlap() {
     stack<Node*> dfs;
-    double overlap = 0.0;
-    int area = 0;
+    vector<double> overlaps;
     dfs.push(root);
     while (!dfs.empty()) {
         auto curr = dfs.top();
         dfs.pop();
         if (!curr->isLeaf) {
-            for (auto r : curr->regions) area += getArea(r);
-            overlap += getTotalOverlap2(curr->regions);
+            overlaps.push_back(getTotalOverlap2(curr->regions));
+            for (auto &c : curr->childs) dfs.push(c);
         }
     }
-    return overlap / (area - overlap);
+    return overlaps;
 }

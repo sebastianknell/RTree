@@ -42,8 +42,7 @@ class RTree : public Tree {
     int order;
     Node* splitNode(Node*) const;
     void adjustTree(Node*, stack<pos2>&);
-    void reinsert();
-    void reinsert2(queue<Node*>&);
+    void reinsert(queue<Node*>&);
 public:
     RTree(int order = 3);
     ~RTree();
@@ -57,8 +56,8 @@ public:
     void useCircles();
     void show(cv::InputOutputArray &);
     void clear() override;
-    double getLeafsOverlap() override;
-    double getInternalOverlap() override;
+    vector<double> getLeafsOverlap() override;
+    vector<double> getInternalOverlap() override;
 };
 
 

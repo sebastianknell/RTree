@@ -471,44 +471,6 @@ void HilbertRtree::handleUnderflow(HilbertNode* v) {
     p->rect = getBoundingRect(p->regions);
     adjustTree(p);
 
-    /* if (p->children.size() < m) {
-        if (p == root) {    // root && leaf, root notLeaf
-            //root = root->children[0];
-            
-            // hijos del padre son hojas, el padre se vuelve hoja
-
-            
-            * si es root y hoja y se eliminan nodos, sí o sí va a quedar el caso de 1 solo hijo pq el root puede tener menos del minimo
-            * si es hoja y no es root, va a juntarse con su hermano e hipoteticamente llegará al caso en el que haya menos de "m"
-            en ese caso, (suponiendo que sean 5-10), el sgt nodo arriba se queda con 4 hijos, por lo que como no puede pasar esto, si el sgt nodo es el root
-            y el root es el único que puede tener menos de m, este nodo se vuelve el root, si no es el root, necesariamente debe tener un hermano a la izquierda o
-            a la derecha, asi que se junta con ese hermano.
-            
-            
-            if (p->children[0]->isLeaf) {
-                p->isLeaf = true;
-                p->data.clear();
-                p->regions.clear();
-                for (auto x : p->children) {
-                    p->data.push_back(x->data);
-                    p->regions.push_back(getBoundingBox(x.data));
-                }
-            } else {    // hijos del padre no son hoja
-                p->isLeaf = true;
-                p->children.clear();
-                p->regions.clear();
-                for (int i=0; i<p->children.size(); i++) {
-                    p->children.push_back(p->children[i]);
-                    p->regions.push_back(p->children[i]->rect);
-                }
-            }
-            
-            root->parent = nullptr;
-        } else {
-            p = p->children[0];
-        }
-    } */
-
     if (p->children.size() < m && p != root) {
         handleUnderflow(p);
     }
@@ -572,36 +534,34 @@ void HilbertRtree::showHilbert(cv::InputOutputArray& img) {
     showHilbertNode(root, img);
 }
 
-double HilbertRtree::getLeafsOverlap() {
-    vector<Rect> rects;
-    stack<HilbertNode*> equisde;
-    equisde.push(root);
-    while (!equisde.empty()){
-        auto curr = equisde.top();
-        equisde.pop();
-        if(curr->isLeaf){
-            for (auto r : curr->regions)
-                rects.push_back(r);
-        } else {
-            for (auto &c : curr->children)
-                equisde.push(c);
+vector<double> HilbertRtree::getLeafsOverlap() {
+    vector<double> overlaps;
+    stack<HilbertNode*> dfs;
+    dfs.push(root);
+    while (!dfs.empty()) {
+        auto curr = dfs.top();
+        dfs.pop();
+        if (curr->isLeaf) {
+            overlaps.push_back(getTotalOverlap2(curr->regions));
+        }
+        else {
+            for (auto &c : curr->children) dfs.push(c);
         }
     }
-    return getTotalOverlap2(rects);
+    return overlaps;
 }
 
-double HilbertRtree::getInternalOverlap() {
+vector<double> HilbertRtree::getInternalOverlap() {
     stack<HilbertNode*> dfs;
-    double overlap = 0.0;
-    int area = 0;
+    vector<double> overlaps;
     dfs.push(root);
     while (!dfs.empty()) {
         auto curr = dfs.top();
         dfs.pop();
         if (!curr->isLeaf) {
-            for (auto r : curr->regions) area += getArea(r);
-            overlap += getTotalOverlap2(curr->regions);
+            overlaps.push_back(getTotalOverlap2(curr->regions));
+            for (auto &c : curr->children) dfs.push(c);
         }
     }
-    return overlap / (area - overlap);
+    return overlaps;
 }

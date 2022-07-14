@@ -86,8 +86,8 @@ public:
             return root->data.size() == 0;
         return root->children.size() == 0;
     }
-    double getLeafsOverlap() override;
-    double getInternalOverlap() override;
+    vector<double> getLeafsOverlap() override;
+    vector<double> getInternalOverlap() override;
     void setLevels(int l) {levels = l;};
 };
 
