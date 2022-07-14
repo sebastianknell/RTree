@@ -227,7 +227,7 @@ void compareOverlap(const string &path) {
     vector<double> htreeSampleLeaf;
     vector<double> htreeSampleInternal;
     vector<double> htreeSampleAll;
-    while (levels < maxLevels) {
+    while (levels <= maxLevels) {
         double rtreeOverlapLeaf = 0.0;
         double htreeOverlapLeaf = 0.0;
         double rtreeOverlapInternal = 0.0;
@@ -242,8 +242,8 @@ void compareOverlap(const string &path) {
             }
             auto rtreeOverlapsLeaf = rtree.getLeafsOverlap();
             auto htreeOverlapsLeaf = htree.getLeafsOverlap();
-            auto rtreeOverlapsInternal = rtree.getLeafsOverlap();
-            auto htreeOverlapsInternal = htree.getLeafsOverlap();
+            auto rtreeOverlapsInternal = rtree.getInternalOverlap();
+            auto htreeOverlapsInternal = htree.getInternalOverlap();
 
             auto rtreeOverlapsAll = rtreeOverlapsLeaf;
             rtreeOverlapsAll.insert(rtreeOverlapsAll.end(), rtreeOverlapsInternal.begin(), rtreeOverlapsInternal.end());
