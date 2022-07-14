@@ -315,11 +315,11 @@ static lineToH getDistance(Point p, Data *data) {
 }
 
 vector<knnResultH> HilbertRtree::knn(Point p, int k) {
-    using distance = struct {HilbertNode* node; int index; double distance; Point p;};
-    auto cmp = [](distance a, distance b) {
+    using dist = struct {HilbertNode* node; int index; double distance; Point p;};
+    auto cmp = [](dist a, dist b) {
         return a.distance > b.distance;
     };
-    priority_queue<distance, vector<distance>, decltype(cmp)> nodes(cmp);
+    priority_queue<dist, vector<dist>, decltype(cmp)> nodes(cmp);
     vector<knnResultH> knn;
     for (int i = 0; i < root->regions.size(); i++)
         if (!root->isLeaf)

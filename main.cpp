@@ -130,7 +130,7 @@ int main() {
 //    testInsert(rtree, "../output/insert_rtree.csv");
 //    testSearch(rtree, "../output/search_rtree.csv");
 //    testRemove(rtree, "../output/remove_rtree.csv");
-    testKnn(rtree, "../output/knn1_rtree.csv");
+    testKnn(rtree, "../output/knn5_rtree.csv");
     // TEST HILBERT RTREE
 //    HilbertRtree htree(512, 512);
 //    testInsert(htree, "../output/insert_htree.csv");

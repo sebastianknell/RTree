@@ -185,7 +185,7 @@ void testKnn(Tree &tree, const string &path) {
     rapidcsv::Document doc;
     doc.InsertColumn<int>(0, {1000, 2000, 3000, 4000, 5000}, "n");
     const int iterations = 100;
-    int k = 1;
+    int k = 5;
     std::random_device dev;
     std::mt19937 rng(dev());
     std::uniform_int_distribution<std::mt19937::result_type> randomPoint(0,512);
