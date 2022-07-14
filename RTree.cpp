@@ -511,6 +511,57 @@ void RTree::callKnn(Point p, int k) {
     knn(p, k);
 }
 
+static void useCirclesRec(Node* node) {
+    // Solo funciona con puntos
+    if (node->isLeaf) {
+        // Calcular el centroide a partir de los puntos
+        int cx = 0, cy = 0;
+        int A = 0;
+        for (auto &d : node->data) {
+            cx += d->front().x * radius;
+            cy += d->front().y * radius;
+            A += radius;
+        }
+        Point centroid = {cx/A, cy/A};
+        double maxD = 0;
+        double minD = INT_MAX;
+        for (auto &d : node->data) {
+            auto distance = getDistance(centroid, d->front());
+            if (distance > maxD) maxD = distance;
+            if (distance < minD) minD = distance;
+        }
+        node->circle = {centroid, (int)maxD};
+        node->minRadius = minD;
+    }
+    else {
+        for (auto &c : node->childs) {
+            useCirclesRec(c);
+        }
+        // Calcular el centroide a partir de los circulos hijos
+        int cx = 0, cy = 0;
+        int A = 0;
+        for (auto &c : node->childs) {
+            cx += c->circle.center.x * pow(c->circle.radius, 2);
+            cy += c->circle.center.y * pow(c->circle.radius, 2);
+            A += pow(c->circle.radius, 2);
+        }
+        Point centroid = {cx/A, cy/A};
+        double maxD = 0;
+        double minD = INT_MAX;
+        for (auto &c : node->childs) {
+            auto distance = getDistance(centroid, c->circle.center) + c->circle.radius;
+            if (distance > maxD) maxD = distance;
+            if (distance < minD) minD = distance;
+        }
+        node->circle = {centroid, (int)maxD};
+        node->minRadius = minD;
+    }
+}
+
+void RTree::useCircles() {
+    useCirclesRec(root);
+}
+
 void RTree::search(const Data &data) {
     auto bb = getBoundingBox(data);
     stack<Node*> dfs;

@@ -17,8 +17,12 @@
 
 using namespace std;
 
+using Circle = struct {Point center; int radius;};
+
 struct Node{
     Rect rect;
+    Circle circle;
+    int minRadius;
     int level;
     vector<Rect> regions; // regiones o bounding boxes si es hoja
     vector<Node*> childs;
@@ -49,6 +53,7 @@ public:
     vector<knnResult> knn(Point, int);
     vector<knnResult> depthFirst(Point, int);
     void callKnn(Point, int) override;
+    void useCircles();
     void show(cv::InputOutputArray &);
     void clear() override;
     double getLeafsOverlap() override;
