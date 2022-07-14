@@ -126,7 +126,9 @@ static void clickHandler(int event, int x, int y, int flags, void*) {
 }
 
 int main() {
-    testInsert(rtree);
+    HilbertRtree htree(width, height);
+    testInsert(htree);
+    // testInsert(rtree);
 //    testSearch(rtree);
 //    testRemove(rtree);
 //    testOverlap();

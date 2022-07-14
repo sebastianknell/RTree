@@ -222,7 +222,7 @@ void HilbertNode::insertOrdered(HData hdata, Rect region) {
     }
 }
 
-void HilbertRtree::insert(const Data obj) {
+void HilbertRtree::insert(const Data& obj) {
     auto R = getBoundingBox(obj);
     auto h = getHilbertIndex(getCenter(R));
     HData hd(obj, h);
@@ -231,7 +231,6 @@ void HilbertRtree::insert(const Data obj) {
     node->insertOrdered(hd, R);
 
     if (node->data.size() > M) {
-        cout << "---------- ENTRA: ----------" << endl;
         handleOverflow(node);
     }
 
@@ -270,8 +269,12 @@ pair<int, HilbertNode*> HilbertRtree::searchUtil(const Data obj) {
     return make_pair(-1, nullptr);
 }
 
-void HilbertRtree::search(const Data obj) {
+void HilbertRtree::search(const Data& obj) {
     searchUtil(obj);
+}
+
+void HilbertRtree::clear() {
+    delete this->root;
 }
 
 static lineToH getDistanceToSegment(Point p, Point a, Point b) {
@@ -510,7 +513,7 @@ void HilbertRtree::handleUnderflow(HilbertNode* v) {
     }
 }
 
-void HilbertRtree::remove(const Data obj) {
+void HilbertRtree::remove(const Data& obj) {
     auto n = searchUtil(obj);
     if (n.first == -1) {
         return;

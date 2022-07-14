@@ -51,7 +51,7 @@ struct Entry {
     ~Entry() {}
 };
 
-class HilbertRtree {
+class HilbertRtree : public Tree {
     int gridWidth, gridHeight, levels, M, m;
     HilbertNode* root;
     int getHilbertIndex(Point);
@@ -61,9 +61,10 @@ public:
         this->levels = 3;
         this->root = new HilbertNode(true);
     }
-    void insert(const Data);
-    void remove(const Data);
-    void search(const Data);
+    void insert(const Data&) override;
+    void remove(const Data&) override;
+    void search(const Data&) override;
+    void clear() override;
     pair<int, HilbertNode*> searchUtil(const Data);
     vector<knnResultH> knn(Point, int);
     void adjustTree(HilbertNode*);
