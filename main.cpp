@@ -136,17 +136,17 @@ int main() {
 //    testInsert(htree, "../output/insert_htree.csv");
 //    testSearch(htree, "../output/search_htree.csv");
 //    testRemove(htree, "../output/remove_htree.csv");
-    compareOverlap("../output/overlap_comp.csv");
+//    compareOverlap("../output/overlap_comp.csv");
 
-//    rtree.show(img);
-//    cv::imshow(windowName, img);
-//    cv::waitKey(1);
-//    cv::setMouseCallback(windowName, clickHandler);
-//
-//    char c;
-//    do {
-//        c = (char)cv::waitKey(0);
-//    } while (c != 'q');
-//
+    rtree.show(img);
+    cv::imshow(windowName, img);
+    cv::waitKey(1);
+    cv::setMouseCallback(windowName, clickHandler);
+
+    char c;
+    do {
+        c = (char)cv::waitKey(0);
+    } while (c != 'q');
+
     return 0;
 }
